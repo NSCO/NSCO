@@ -6,14 +6,14 @@ pandas es un paquete de Python para el manejo de datos. Me parece que tiene unas
 `[~]$ pip install pandas`
 
 ```
- >>> import pandas as pd;
- >>> datos = pd.read_csv('datos.csv');
+ import pandas as pd;
+ datos = pd.read_csv('datos.csv');
 
 
 ```
 ####Acceder a los primeros 3 elementos de una columna
 ```
- >>> datos["pm25"][0:3]
+ datos["pm25"][0:3]
       0     9.771185
       1     9.993817
       2    10.688618
@@ -21,7 +21,7 @@ pandas es un paquete de Python para el manejo de datos. Me parece que tiene unas
 ```
 ###Describir una columna
 ```
- >>> datos["pm25"].describe();
+ datos["pm25"].describe();
        count    576.000000
        mean       9.836358
        std        2.277034
@@ -36,12 +36,16 @@ pandas es un paquete de Python para el manejo de datos. Me parece que tiene unas
 ###Hacer un BoxPlot
 La librería esta me empieza a gustar. No te rompe las bolas y te deja hacer. Está usando matplotlib
 ```
- >>>  datos.boxplot("pm25");
- >>> #Entiendo que está haciendo algo asi
- >>>
- >>> import matplotlib.pyplot as plt
- >>> fig, axes = plt.subplots(nrows=1, ncols=1, figsize=(6,6)) 
- >>> axes[0, 0].boxplot(datos["pm25"], labels=true)
+datos.boxplot("pm25");
+#Entiendo que está haciendo algo asi
+import matplotlib.pyplot as plt
+fig, axes = plt.subplots(nrows=1, ncols=1, figsize=(6,6));
+axes[0, 0].boxplot(datos["pm25"], labels=true);
+```
+
+###Hacer un histograma
+```
+datos["pm25"].hist();
 ```
 ### Otra alternativa
 #### Leer un CSV 
@@ -52,9 +56,9 @@ Me parece que **asciitable** es una librería copada para leer tablas porque adm
 
 
  ```
- >>> import asciitable;
- >>> datos =  asciitable.read('data_table.txt'); 
- >>> datos[1:5]
+ import asciitable;
+ datos =  asciitable.read('data_table.txt'); 
+ datos[1:5]
    rec.array([(9.99381725284814, 1027, 'east', -85.842858, 33.26581),
        (10.6886181012839, 1033, 'east', -87.72596, 34.73148),
        (11.3374236874237, 1049, 'east', -85.798919, 34.459133),
@@ -63,7 +67,7 @@ Me parece que **asciitable** es una librería copada para leer tablas porque adm
 ```
 ####Acceder a los primeros 3 elementos de una columna
 ```
- >>> datos.region[0:3]
+ datos.region[0:3]
      chararray(['east', 'east', 'east'],  dtype='|S4')
 ```
 
