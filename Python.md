@@ -21,7 +21,7 @@ pandas es un paquete de Python para el manejo de datos. Me parece que tiene unas
 ```
 ###Describir una columna
 ```
->>> datos["pm25"].describe();
+ >>> datos["pm25"].describe();
        count    576.000000
        mean       9.836358
        std        2.277034
@@ -31,6 +31,17 @@ pandas es un paquete de Python para el manejo de datos. Me parece que tiene unas
        75%       11.356012
        max       18.440731
        Name: pm25, dtype: float64
+```
+
+###Hacer un BoxPlot
+La librería esta me empieza a gustar. No te rompe las bolas y te deja hacer. Está usando matplotlib
+```
+ >>>  datos.boxplot("pm25");
+ >>> #Entiendo que está haciendo algo asi
+ >>>
+ >>> import matplotlib.pyplot as plt
+ >>> fig, axes = plt.subplots(nrows=1, ncols=1, figsize=(6,6)) 
+ >>> axes[0, 0].boxplot(datos["pm25"], labels=true)
 ```
 ### Otra alternativa
 #### Leer un CSV 
