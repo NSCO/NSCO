@@ -2,9 +2,15 @@
 
 
 
-* Leer un CSV 
+## Leer un CSV 
+
+Me parece que asciitable es una librería copada para leer tablas porque admite tablas heterogéneas y ademas adivina automáticamente el formato de las celdas
+
+`[~]$ pip install asciitable`
+
 
  ```
- from numpy import loadtxt
- datos = loadtxt('archivo.csv', delimiter=',')
+ import asciitable;
+ datos =  asciitable.read('data_table.txt');
+ 
   ```
