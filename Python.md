@@ -50,6 +50,18 @@ boxplot(datos["pm25"])
 ```
 datos["pm25"].hist();
 ```
+####Sin usar pandas
+```
+n, bins, patches = plt.hist(x, num_bins, normed=1, facecolor='green', alpha=0.5)
+```
+
+###Histograma con RUG
+```
+n, bins, patches = plt.hist(datos["pm25"], 50, normed=1, facecolor='green', alpha=0.5);
+plt.plot(datos["pm25"],np.zeros(datos["pm25"].shape),"b+",ms=20)
+plt.show();
+```
+
 ### Otra alternativa
 #### Leer un CSV 
 
