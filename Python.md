@@ -55,7 +55,7 @@ datos["pm25"].hist();
 n, bins, patches = plt.hist(x, num_bins, normed=1, facecolor='green', alpha=0.5)
 ```
 
-###Histograma con RUG
+###Histograma con rug plot
 ```
 n, bins, patches = plt.hist(datos["pm25"], 50, normed=1, facecolor='green', alpha=0.5);
 plt.plot(datos["pm25"],np.zeros(datos["pm25"].shape),"b+",ms=20)
@@ -105,3 +105,19 @@ clear()
 
 ```
   
+## Cosas de Interés
+
+```
+Numpy for Matlab users
+http://wiki.scipy.org/NumPy_for_Matlab_Users
+
+Python Numpy Tutorial
+http://cs231n.github.io/python-numpy-tutorial/
+
+yhat - Data Science in Python
+http://blog.yhathq.com/posts/data-science-in-python-tutorial.html
+
+Stanford Data Science Course (CS109)
+http://cs109.github.io/2014/
+
+```
