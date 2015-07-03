@@ -73,9 +73,8 @@ Me parece que **asciitable** es una librería copada para leer tablas porque adm
 
 ## Limpiar pantalla
 
-import os
-
 ```
+import os
 def cls():
     os.system(['clear','cls'][os.name == 'nt'])
 # now, to clear the screen
@@ -85,9 +84,9 @@ cls()
 ## Borrar valores variables
 
 ```
->>> import os
->>> clear = lambda: os.system('cls')
->>> clear()
+import os
+clear = lambda: os.system('cls')
+clear()
 
 ```
   
