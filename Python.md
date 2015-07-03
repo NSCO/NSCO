@@ -35,10 +35,11 @@ pandas es un paquete de Python para el manejo de datos. Me parece que tiene unas
 
 ###Hacer un BoxPlot
 La librería esta me empieza a gustar. No te rompe las bolas y te deja hacer. Está usando matplotlib
-[PyPlot API](http://matplotlib.org/api/pyplot_api.html)
 ```
 datos.boxplot("pm25");
-#Entiendo que está haciendo algo asi
+```
+que hace esto
+```
 from pylab import *
 figure()
 boxplot(datos["pm25"])
