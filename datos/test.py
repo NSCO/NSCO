@@ -8,19 +8,18 @@ datos["pm25"][0:3];
 datos["pm25"].describe();
 datos.boxplot("pm25");
 (fig, axes) = plt.subplots(nrows=2, ncols=2, figsize=(6,6));
-#axes[0, 0].boxplot(datos["pm25"], labels=True);
-axes[0, 0].boxplot(datos["pm25"]);
-axes[1,1].hist(datos["pm25"], color="green");
-axes[1,1].plot(datos["pm25"], np.zeros(datos["pm25"].shape), 'b+', ms=20)  # rug plot
 
-#fig2 = axes[0, 0].boxplot(datos["pm25"]);
-#axes.boxplot(datos["pm25"]);
-#datos["pm25"].hist();
-#ax = fig.add_subplot(111);
-#x1 = datos["pm25"];
-#ax.plot(x1, np.zeros(x1.shape), 'b+', ms=20)  # rug plot
-#ax.plot(x1, np.zeros(x1.shape), 'b+', ms=20)  # rug plot
-#x_eval = np.linspace(-10, 10, num=200)
+axes[0, 0].boxplot(datos["pm25"]);
+axes[1, 1].hist(datos["pm25"], color="green");
+# este es un scatter plot común en el que todos los puntos tienen 0 en
+# el eje Y, o sea que están alineados horizontalmente.
+# zeros() funciona como en matlab, y shape es como size() de matlab.
+# "b+" es el formato de los puntos, como el plot() de matlab.
+# "b+" hace puntos azules con forma de signo más.
+# ms es "marker size", el tamaño de los puntos en el scatter plot.
+axes[1, 1].plot(datos["pm25"], np.zeros(datos["pm25"].shape), 'b+', ms=5)  # rug plot
+
+
  
  
  
