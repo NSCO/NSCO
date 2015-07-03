@@ -38,9 +38,10 @@ La librería esta me empieza a gustar. No te rompe las bolas y te deja hacer. Es
 ```
 datos.boxplot("pm25");
 #Entiendo que está haciendo algo asi
-import matplotlib.pyplot as plt
-fig, axes = plt.subplots(nrows=1, ncols=1, figsize=(6,6));
-axes[0, 0].boxplot(datos["pm25"], labels=true);
+from pylab import *
+figure()
+boxplot(datos["pm25"])
+
 ```
 
 ###Hacer un histograma
