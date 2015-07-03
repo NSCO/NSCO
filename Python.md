@@ -37,16 +37,31 @@ pandas es un paquete de Python para el manejo de datos. Me parece que tiene unas
 La librería esta me empieza a gustar. No te rompe las bolas y te deja hacer. Está usando matplotlib
 ```
 datos.boxplot("pm25");
-#Entiendo que está haciendo algo asi
-import matplotlib.pyplot as plt
-fig, axes = plt.subplots(nrows=1, ncols=1, figsize=(6,6));
-axes[0, 0].boxplot(datos["pm25"], labels=true);
+```
+que hace esto
+```
+from pylab import *
+figure()
+boxplot(datos["pm25"])
+
 ```
 
 ###Hacer un histograma
 ```
 datos["pm25"].hist();
 ```
+####Sin usar pandas
+```
+n, bins, patches = plt.hist(x, num_bins, normed=1, facecolor='green', alpha=0.5)
+```
+
+###Histograma con RUG
+```
+n, bins, patches = plt.hist(datos["pm25"], 50, normed=1, facecolor='green', alpha=0.5);
+plt.plot(datos["pm25"],np.zeros(datos["pm25"].shape),"b+",ms=20)
+plt.show();
+```
+
 ### Otra alternativa
 #### Leer un CSV 
 
