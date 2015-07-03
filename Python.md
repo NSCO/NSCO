@@ -71,7 +71,7 @@ Me parece que **asciitable** es una librería copada para leer tablas porque adm
      chararray(['east', 'east', 'east'],  dtype='|S4')
 ```
 
-** Limpiar pantalla
+## Limpiar pantalla
 
 import os
 
@@ -82,7 +82,7 @@ def cls():
 cls()
 ```
 
-** Borrar valores variables
+## Borrar valores variables
 
 ```
 >>> import os
