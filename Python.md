@@ -122,6 +122,13 @@ http://cs109.github.io/2014/
 
 HCluster, basado en Numpy (está para Windows y Debian)
 https://code.google.com/p/scipy-cluster/
+Clustering Aglomerativo
+
+    generating hierarchical clusters from distance matrices
+    computing distance matrices from observation vectors
+    computing statistics on clusters
+    cutting linkages to generate flat clusters
+    and visualizing clusters with dendrograms. 
 
 
 ```
