@@ -120,4 +120,8 @@ http://blog.yhathq.com/posts/data-science-in-python-tutorial.html
 Stanford Data Science Course (CS109)
 http://cs109.github.io/2014/
 
+HCluster, basado en Numpy (está para Windows y Debian)
+https://code.google.com/p/scipy-cluster/
+
+
 ```
