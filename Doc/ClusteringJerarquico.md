@@ -1,4 +1,7 @@
 # Clustering Jerárquico
+## Algoritmos jerárquicos para grandes volúmenes de datos
+El número de operaciones para los algoritmos aglomerativos es de orden N^3  y no puede ser menos de O(N^2), por mas poronga que seas programando. 
+### El algoritmo CURE
 
 
 ##Estaría bueno
