@@ -16,5 +16,6 @@ def main():
     Y = pdist(X)
     Z = linkage(Y)
     dendrogram(Z)
+    
 
 main()
