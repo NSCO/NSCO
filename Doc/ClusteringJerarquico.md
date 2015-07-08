@@ -1,4 +1,4 @@
-# Clustering Jerárquioc 
+# Clustering Jerárquico
 ## Comparación
 En el ejemplo del Cluster in Cluster el método de single linkage es el único que recobra la estructura de los grupos. Métodos como el complete, average o ward fallan, todos estos métodos están diseñados para obtener clusteres elípticos o casi convexos [1].
 
