@@ -27,3 +27,16 @@ Una vez que la heap Q y el arbol T fueron inicializados, los pares de clusters m
 ##Estaría bueno
   * Hablar de que suposiciones hacen los algoritmos jerárquicos acerca de la distribución de los datos
   * Que alternativas hay cuando son muchos, pero muchos. El theodoridis tiene algunos centro. Voy a ver si puedo sacar algo después.
+
+### Otros papers  
+- Michael Steinbach, George Karypis, and Vipin Kumar. "A comparison of document clustering techniques" (2000)
+	Los autores llegan a la conclusión de que no siempre el clustering jerárquico obtiene mejores resultados que el particional en clustering de documentos, pero que siempre su costo computacional es mayor.
+	Proponen además el algoritmo Bisecting K-means que puede funcionar tanto de forma jerárquica como particional, ya que en cada paso divide el cluster más grande en 2 con un K-means estándar.	
+	
+- Ying Zhao and George Karypis. "Comparison of Agglomerative and Partitional Document Clustering Algorithms" (2002)	
+	Esta va en la misma línea que el anterior, aplicado de vuelta al clustering de documentos. Propone varias funciones objetivo para evaluar las variantes de ambos tipos de algoritmos.
+	
+- Nikos Hourdakis, Michalis Argyriou, Euripides G. M. Petrakis, and Evangelos E. Milios. "Hierarchical clustering in medical document collections: the Bic-Means method" (2010).
+	Otro griego que aparentemente hizo su tesis sobre el trabajo del anterior. Propone una modificación sobre el Bisecting K-means agregando el Bayesian Information Criteria como mecanismo de parada
+	en la división de los clusters, como si fuera un árbol de decisión.
+	
