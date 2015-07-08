@@ -1,4 +1,13 @@
-# Clustering Jerárquico
+# Clustering Jerárquioc 
+## Comparación
+En el ejemplo del Cluster in Cluster el método de single linkage es el único que recobra la estructura de los grupos. Métodos como el complete, average o ward fallan, todos estos métodos están diseñados para obtener clusteres elípticos o casi convexos [1].
+Debido a la naturaleza del problema que examinan en [2],  se enfocan en métodos jerárquicos como el de vecinos más próximos, vecino mas lejano, el método de Ward y linkage entre grupos y el linkage intra grupos, el linkage de centroide. El objetivo es comprobar la performance de diferentes métodos de clustering cuando se usan conjuntos de datos cóncavos, y también que tipos de estructuras de datos puede revelar estos métodos y asignar correctamente la pertenencia a cada grupo. Las últimas páginas tiene ejemplos de como funciona cada algoritmo. Es interesante para evaluar.
+
+
+###Biblio
+[1] Stuetzle W. et. al. "A generalized single linkage method for estimating the cluster tree of a density".
+[2] Francetic, Nagode. "Hierarchical Clustering with Concave Data Sets". http://www.stat-d.si/mz/mz2.1/francetic.pdf
+
 ## Algoritmos jerárquicos para grandes volúmenes de datos
 El número de operaciones para los algoritmos aglomerativos es de orden N^3  y no puede ser menos de O(N^2), por mas poronga que seas programando. 
 ### El algoritmo CURE
