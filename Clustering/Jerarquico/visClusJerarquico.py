@@ -31,7 +31,7 @@ progversion = "0.1"
 
 class MyMplCanvas(FigureCanvas):
     """Ultimately, this is a QWidget (as well as a FigureCanvasAgg, etc.)."""
-    def __init__(self,listaClusters, parent=None, ,width=5, height=4, dpi=100):
+    def __init__(self,parent=None, width=5, height=4, dpi=100):
         fig = Figure(figsize=(width, height), dpi=dpi)
         self.axes = fig.add_subplot(111)
         # We want the axes cleared every time plot() is called
@@ -53,34 +53,27 @@ class MyMplCanvas(FigureCanvas):
 
 
 class CanvasClustering(MyMplCanvas):
+    def __init__(self,grafos,clus,parent=None, width=5, height=4, dpi=100):
+        self.listaGrafos=grafos
+        self.clusteres  = clus
+        MyMplCanvas.__init__(self,parent,width,height,dpi)
+        
     """Simple canvas with a sine plot."""
     def compute_initial_figure(self):
-        t = arange(0.0, 3.0, 0.01)
-        s = sin(2*pi*t)
-        self.axes.plot(t, s)
+       p=nx.get_node_attributes(self.listaGrafos[0],'pos')       
+       nx.draw(self.listaGrafos[0],pos=p, ax=self.axes)         
+         
+    def actualizarGrafo(self,val):
+       p=nx.get_node_attributes(self.listaGrafos[val],'pos')       
+       nx.draw(self.listaGrafos[val],pos=p, ax=self.axes)
+       self.draw()
 
 
-class MyDynamicMplCanvas(MyMplCanvas):
-    """A canvas that updates itself every second with a new plot."""
-    def __init__(self, *args, **kwargs):
-        MyMplCanvas.__init__(self, *args, **kwargs)
-        timer = QtCore.QTimer(self)
-        timer.timeout.connect(self.update_figure)
-        timer.start(1000)
 
-    def compute_initial_figure(self):
-        self.axes.plot([0, 1, 2, 3], [1, 2, 0, 4], 'r')
-
-    def update_figure(self):
-        # Build a list of 4 random integers between 0 and 10 (both inclusive)
-        l = [random.randint(0, 10) for i in range(4)]
-
-        self.axes.plot([0, 1, 2, 3], l, 'r')
-        self.draw()
 
 
 class ApplicationWindow(QtGui.QMainWindow):
-    def __init__(self,clus,grafo):
+    def __init__(self,clus,grafos):
         QtGui.QMainWindow.__init__(self)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
         self.setWindowTitle("application main window")     
@@ -92,7 +85,13 @@ class ApplicationWindow(QtGui.QMainWindow):
         l = QtGui.QVBoxLayout(self.main_widget)
         self.slider = QtGui.QSlider(self.main_widget)
         self.slider.setOrientation(QtCore.Qt.Horizontal)
+        self.slider.setMaximum(len(self.listaGrafos)-1)
+        self.slider.setMinimum(0)
         sc = CanvasClustering(self.listaGrafos,self.main_widget, width=5, height=4, dpi=100)
+        
+        
+        
+        self.slider.valueChanged.connect(sc.actualizarGrafo)
         
         l.addWidget(sc)
         l.addWidget(self.slider)
@@ -116,7 +115,9 @@ import matplotlib.pyplot as plt
 def clusterJerarquico(fun,datos,k):
     nfilas=datos.shape[0]
     G=nx.Graph()
-    G.add_nodes_from([0,datos.shape[0]])
+    for i in range(0,nfilas):
+        print(i)                
+        G.add_node(i,pos=[datos[i,0],datos[i,1]])    
     listaGrafos  = []
     clus=[]
     clus=[[i] for i in range (0, nfilas)]
@@ -128,14 +129,16 @@ def clusterJerarquico(fun,datos,k):
           for i in range (0, len(clus)):
                   for j in range (i+1, len(clus)):
                       distancia = fun(clus[i], clus[j] ,datos)              
-                      if (rmin > distancia ):
-                          rmin=distancia
+                      if (rmin > distancia[0] ):
+                          rmin=distancia[0]
                           imin=i
                           jmin=j
+          
           clusNuevo=clus[imin] + clus[jmin]
-          gNuevo = G.copy()          
-          gNuevo.add_edge(imin,jmin)
+          gNuevo = G.to_undirected()          
+          gNuevo.add_edge(distancia[1],distancia[2])          
           listaGrafos.append(gNuevo)
+          G=gNuevo
           aux = clus[jmin]        
           clus.remove(clus[imin])
           clus.remove(aux)
@@ -145,12 +148,15 @@ def clusterJerarquico(fun,datos,k):
 
 def singleLinkage(clusI,clusJ, datos):
     mind=999999999
+    
     for i in clusI:
         for j in clusJ:
             d=norm(datos[i,:]-datos[j,:])
             if (d<mind):
                 mind=d;
-    return mind
+                ii=i
+                jj=j
+    return [mind, ii, jj]
 def averageLinkage(clusI,clusJ, datos):
     maxd=-1
     for i in clusI:
@@ -158,7 +164,9 @@ def averageLinkage(clusI,clusJ, datos):
             d=norm(datos[i,:]-datos[j,:])
             if (d>maxd):
                 maxd=d;
-    return maxd
+                ii=i
+                jj=j
+    return [maxd, ii, jj]
 def completeLinkage(clusI,clusJ, datos):
     maxd=-1
     for i in clusI:
@@ -166,13 +174,15 @@ def completeLinkage(clusI,clusJ, datos):
             d=norm(datos[i,:]-datos[j,:])
             if (d>maxd):
                 maxd=d;
-    return maxd
+                ii=i
+                jj=j
+    return[ maxd, ii, jj]
 
                           
 
 datos=clusterInCluster(70)
 datos=datos[:,range(0,2)]
-[clus, grafo]=clusterJerarquico(completeLinkage,datos,2)
+[clus, grafo]=clusterJerarquico(singleLinkage,datos,2)
 
 qApp = QtGui.QApplication(sys.argv)
 
