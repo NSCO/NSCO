@@ -133,10 +133,11 @@ def clusterJerarquico(fun,datos,k):
                           rmin=distancia[0]
                           imin=i
                           jmin=j
+                          minDist=distancia
           
           clusNuevo=clus[imin] + clus[jmin]
           gNuevo = G.to_undirected()          
-          gNuevo.add_edge(distancia[1],distancia[2])          
+          gNuevo.add_edge(minDist[1],minDist[2])          
           listaGrafos.append(gNuevo)
           G=gNuevo
           aux = clus[jmin]        
@@ -182,7 +183,7 @@ def completeLinkage(clusI,clusJ, datos):
 
 datos=clusterInCluster(70)
 datos=datos[:,range(0,2)]
-[clus, grafo]=clusterJerarquico(singleLinkage,datos,2)
+[clus, grafo]=clusterJerarquico(completeLinkage,datos,2)
 
 qApp = QtGui.QApplication(sys.argv)
 
