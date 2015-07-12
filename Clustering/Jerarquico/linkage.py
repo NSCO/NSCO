@@ -1,6 +1,5 @@
 from numpy.linalg import norm
 from numpy import zeros
-import numpy
 def singleLinkage(clusI,clusJ, datos):
     mind=999999999
     

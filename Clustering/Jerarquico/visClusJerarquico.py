@@ -22,7 +22,6 @@ if use_pyside:
 else:
     from PyQt4 import QtGui, QtCore
 
-from numpy import arange, sin, pi
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
@@ -118,8 +117,8 @@ class ApplicationWindow(QtGui.QMainWindow):
 
 
 from  clusterincluster import clusterInCluster
-from matplotlib.pyplot import plot,figure
-import matplotlib.pyplot as plt
+from matplotlib.pyplot import figure
+
 
 
 def clusterJerarquico(fun,datos,k):
@@ -167,9 +166,9 @@ def clusterJerarquico(fun,datos,k):
 
 
 def main():
-  datos=clusterInCluster(150)
+  datos=clusterInCluster(130)
   datos=datos[:,range(0,2)]
-  [colores, grafo]=clusterJerarquico(averageLinkage,datos,2)
+  [colores, grafo]=clusterJerarquico(singleLinkage,datos,2)
   qApp = QtGui.QApplication(sys.argv)
   aw = ApplicationWindow(colores,grafo)
   aw.setWindowTitle("%s" % progname)
