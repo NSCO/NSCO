@@ -5,19 +5,30 @@ Created on Thu Jul 16 09:59:16 2015
 @author: luciano
 """
 
+from numpy.linalg import norm
 from numpy import matrix,vstack
 from  clusterincluster import clusterInCluster
-
-def dist(v1, v2):
-    return 5;
+from KDTree import kdtree
+def dist(a, b):
+        
+    if ( ((type(a) == float) and (type(b) == float)) or ((type(a) == int) and (type(b) == int)) ):
+        return (a - b)**2.0;
+        
+    return norm(a-b,2)    
+    
 class CureCluster:
    
-    def __init__(self,punto):
-        self.rep=[punto]
-        self.media=[punto]
-        self.puntos=[punto]
-        self.masCercano = None
-        self.distMasCercano = float('inf');
+    def __init__(self,punto=None):
+        if (punto is not None):
+          self.rep=[punto]
+          self.media=punto
+          self.puntos=[punto]
+        else:
+          self.puntos = [ ];
+          self.media = None;
+          self.rep = [ ];
+        self.masCercano = None;
+        self.distMasCercano = float('inf'); 
     def cantPuntos(self):
         return len(self.puntos)
 
@@ -34,12 +45,11 @@ class CURE:
         minDist = float('inf');
         for i in range(0, len(cluster1.rep)):
             for k in range(0, len(cluster2.rep)):                
-                distActual = dist(cluster1.rep[i], cluster2.rep[k]);        # Slow mode
+                distActual = dist(cluster1.rep[i], cluster2.rep[k]);      
                 if (distActual < minDist):
                     minDist = distActual;
         return minDist
                     
-        return distance;
     def _crearCola(self):
         self._cola = [CureCluster(patron) for patron in self._datos];        
         for i in range(0, len(self._cola)):
@@ -51,7 +61,7 @@ class CURE:
                     if (dist < minDist):
                         minDist = dist;
                         minIndi = k;
-            self._cola[i].cercano   = self._cola[minIndi];
+            self._cola[i].masCercano   = self._cola[minIndi];
             self._cola[i].distancia = minDist;          
         #Ordena la cola por distancia            
         self._cola.sort(key = lambda x: x.distMasCercano, reverse = False);
@@ -60,13 +70,13 @@ class CURE:
     
        #print(reduce(lambda lista, x: lista + x.rep, self._cola, list()))
        for cluster in self._cola:           
-            for representante in cluster.rep:                
-                self._arbol.add(representante)                   
+            for representante in cluster.rep:    
+                self._arbol.insert(representante.tolist()[0],cluster)                   
   
        
     def _borarRepresentantes(self,cluster):        
         for punto in cluster.rep:
-            self._arbol.remove(punto);
+            self._arbol.remove(punto.tolist()[0]);
     def ejecutar(self):
         while (len(self._cola) > self._k):
             cluster1 = self._cola[0];       #Cluster que tiene el vecino más cercano
@@ -74,6 +84,7 @@ class CURE:
             
             #Saco los  dos clusteres
             self._cola.remove(cluster1)
+
             self._cola.remove(cluster2)
             
             self._borarRepresentantes(cluster1)
@@ -128,18 +139,17 @@ class CURE:
         minDist = float('inf');
         
         for punto in cluster.rep:     
-            puntoLista = punto.aslist()[0]
-            puntosCercanos = self._arbol.search_nn_dist(puntoLista, distance);
-            for vecino in puntosCercanos:
-                distCandidato = dist(vecino,punto)
-                if ( (distCandidato < minDist) and (self.mapaClusters[tuple(puntoLista)] is not cluster) ):
+            puntoLista = punto.tolist()[0]
+            vecinosProximos = self._arbol.find_nearest_dist_nodes(puntoLista, distance);
+            for (distCandidato, kdtree_node) in vecinosProximos:
+                if ( (distCandidato < minDist) and (kdtree_node is not None) and (kdtree_node.payload is not cluster) ):
                     minDist = distCandidato;
-                    minCluster = self.mapaClusters[tuple(puntoLista)];
+                    minCluster = kdtree_node.payload;
                     
         return (minCluster, minDist);                            
     def _insertarNuevoRepresentantes(self,clusterNuevo):      
         for representante in clusterNuevo.rep:
-            self._arbol.insert(representante, cluster);            
+            self._arbol.insert(representante.tolist()[0], clusterNuevo);            
             
     def _unirClusters(self, cluster1, cluster2):
         """!
@@ -150,20 +160,20 @@ class CURE:
         
         clusterNuevo.puntos = cluster1.puntos + cluster2.puntos;
         
-        
-        clusterNuevo.media = (cluster1.cantPuntos() * cluster1.media + cluster2.cantPuntos() + cluster2.media);
+      
+        clusterNuevo.media = ((cluster1.cantPuntos() * cluster1.media) + (cluster2.cantPuntos() + cluster2.media));
         clusterNuevo.media = clusterNuevo.media /(cluster1.cantPuntos() + cluster2.cantPuntos());
         
         listaTemp = list(); 
         
-        for idx in range(self.rep):
+        for idx in range(self._rep): #por cada uno de los respresenatnes
             maxDist = 0;
             maxPunto = None;
             
             for punto in clusterNuevo.puntos:
                 minDist = 0;
-                if (index == 0):
-                    minDist = dist(punto, clusterNuevo.mean);                    
+                if (idx == 0):
+                    minDist = dist(punto, clusterNuevo.media);                    
                 else:
                     minTempDist = float('inf')
                     for q in listaTemp:      
@@ -175,8 +185,16 @@ class CURE:
                 if (minDist >= maxDist):
                     maxDist = minDist;
                     maxPunto = punto;
-        
-            if (maxPunto not in listaTemp):
+
+
+            i=0
+            encontre=False
+            while (i<len(listaTemp) and not(encontre)):            
+                if (norm(listaTemp[i]-maxPunto)<0.00001):
+                    encontre=True
+                i=i+1
+            
+            if (not(encontre)):
                 listaTemp.append(maxPunto);
                 
         #Los achico hacia la media                
