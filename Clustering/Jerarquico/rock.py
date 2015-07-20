@@ -1,43 +1,74 @@
 # -*- coding: utf-8 -*-
+"""
+Created on Tue Jul  7 07:07:26 2015
+
+@author: emi
+"""
+#clus guarda
+
 
 from  clusterincluster import clusterInCluster
-import heapq
+from numpy.linalg import norm
+from  clusterincluster import clusterInCluster
+from matplotlib.pyplot import plot,figure
+import matplotlib.pyplot as plt
+
 from scipy.spatial import KDTree
-class ROCKCluster:
-    def __init__(self, idx,rock):
-        self._elementos = [idx] 
-        self.idx = idx
-        self.rock = rock
-    def __lt__(self, otro):
-        self.rock.linkCluster(self,otr)
-        return True
+from scipy.sparse import lil_matrix
+def f():
+    return 1
 class ROCK:
     def __init__(self,datos,r):
         self._datos = datos
-        self._arbol = KDTree(datos)
-        self._calcularLinks(r)
-    def _calcularLinks(self,r):
-        self._vecinos = self._arbol.query_ball_point(self._datos,r)
-        self._clusters = [ROCKCluster(i,self) for i in range(0,self._datos.shape[0])]
-        self._q = []
-        for clus in self._clusters:
-            self._q.append(self._armarHeapLocal(clus))
-    def linkVecinos(self,i,j):
-        return len(list(set(self._vecinos[i]) & set(self._vecinos[j]))  )
-    def linkCluster(self,clusi,clusj):
-        suma = 0
-        for i in clusi._elementos:
-            for j in clusj._elementos:
-                suma = suma+ self.linkVecinos(i,j)
-        return suma
-                
-    def _armarHeapLocal(self, iclus):
-        heap =[];
-        for vecino in self._vecinos[iclus.idx]:
-             heapq.heappush(heap,self._clusters[vecino]);
-        return heap;
+        _arbol =KDTree(datos)
+        _vecinos = _arbol.query_ball_point(self._datos,r)
+        self._datos = datos
+        self._links = lil_matrix((datos.shape[0], datos.shape[0]))
+        for i in range(0,self._datos.shape[0]):
+            N = _vecinos[i]
+            for j in range(0,len(N)-1):
+                for k in range(j+1,len(N)):
+                    self._links[N[j],N[k]]+=1
         
+            
+    def dist(self,clusi,clusj):
+        suma=0
+        for i in clusi:
+            for j in clusj:
+                suma+=self._links[i,j]
+        n1 = len(clusi)
+        n2 = len(clusj)
+        return suma/(pow(n1+n2,1+2*f())) - suma/(pow(n1,1+2*f())) - suma/(pow(n2,1+2*f()))
         
-datos = clusterInCluster()
-datos = datos[:,range(0,2)]
+    def ejecutar(self,k):
+        clus=[[i] for i in range (0, self._datos.shape[0])]
+        maxG=float("-inf")
+        while (len(clus) > k):
+            for i in range (0, len(clus)):
+                  for j in range (i+1, len(clus)):
+                      g = self.dist(clus[i], clus[j])     
+                      if (maxG < g):
+                          maxG=g
+                          imax=i
+                          jmax=j
+            clusNuevo=clus[imax] + clus[jmax]
+            aux = clus[jmax]        
+            clus.remove(clus[imax])
+            clus.remove(aux)
+            clus.append(clusNuevo)
+        return clus
+
+
+
+
+                          
+
+datos=clusterInCluster(70)
+datos=datos[:,range(0,2)]
 r = ROCK(datos,5)
+clusters = r.ejecutar(2)
+#Los dibujo
+figure()
+plt.plot(datos[clusters[0],0],datos[clusters[0],1],'ro')
+plt.plot(datos[clusters[1],0],datos[clusters[1],1],'bo')
+plt.show()
