@@ -1,213 +1,165 @@
 # -*- coding: utf-8 -*-
 """
-Created on Thu Jul 16 09:59:16 2015
+Created on Tue Jul 21 17:12:32 2015
 
-@author: luciano
+@author: geraq
 """
+import numpy as np
+import sys as sys
+import matplotlib.pyplot as plt
+import pandas as pd
+import scipy.spatial.distance as spdist
 
-from numpy.linalg import norm
-from numpy import matrix,vstack
-from  clusterincluster import clusterInCluster
-from KDTree import kdtree
-def dist(a, b):
-        
-    if ( ((type(a) == float) and (type(b) == float)) or ((type(a) == int) and (type(b) == int)) ):
-        return (a - b)**2.0;
-        
-    return norm(a-b,2)    
+def euclidean_dist(e1, e2):
+    return np.sqrt(np.sum((e1 - e2)**2))
+
+def single_dist(cluster_i, cluster_j, metric):
+    dmin = sys.maxint
+    for i in cluster_i:
+        for j in cluster_j:
+            d = metric(i, j)
+            if (d < dmin):
+                dmin = d
+    return dmin            
+
+
+class Cure:
+    def __init__(self, K, cant_rep, alpha):
+        self.K = K
+        self.cant_rep = cant_rep
+        self.alpha = alpha
+
+    #generative agglomerative scheme (GAS)
+    def agglomerative_clustering(self, data, dist_fun, metric):
+        (nRows, nCols) = data.shape
+        clusters = [Cluster.singleton(data[i,:], i) for i in range(0,nRows)]
+        #distances = [dist_fun(data[i,:], data[j,:]) for j in range(i + 1, nRows) for i in range(0, nRows - 1)]
+        for c in range(nRows, self.K, -1):
+            print c
+            imin = -1; jmin = -1;
+            dmin = sys.maxint
+            for i in range(0, c - 1):
+                for j in range(i + 1, c):
+                    d = dist_fun(clusters[i].representatives, clusters[j].representatives, metric);
+                    #hack                    
+                    #d = d + (len(clusters[i].exampleIds) * len(clusters[j].exampleIds))/(nRows**2) * 100 #???
+                    d = d * (1 + 17 * (len(clusters[i].exampleIds) * len(clusters[j].exampleIds))/((nRows/2)**2)) #???
+                    if (d < dmin):
+                        dmin = d;
+                        imin = i;
+                        jmin = j;
+            c1 = clusters[imin];        
+            c2 = clusters[jmin];
+            c_new = self.merge(c1, c2, data, metric);
+            clusters.remove(c1);
+            clusters.remove(c2);
+            clusters.append(c_new);
+        return clusters 
     
-class CureCluster:
-   
-    def __init__(self,punto=None):
-        if (punto is not None):
-          self.rep=[punto]
-          self.media=punto
-          self.puntos=[punto]
-        else:
-          self.puntos = [ ];
-          self.media = None;
-          self.rep = [ ];
-        self.masCercano = None;
-        self.distMasCercano = float('inf'); 
-    def cantPuntos(self):
-        return len(self.puntos)
-
-class CURE:
-    def __init__(self, datos, k, n_rep = 5, compression = 0.5):
-        self._datos = datos;
-        self._k = k;
-        self._rep = n_rep;
-        self._comp = compression;
-        self._crearCola();
-        self._crearArbolKD();
-    def _distanciaClusters(self, cluster1, cluster2):
-        #Hace el single linkage pero entre los representantes
-        minDist = float('inf');
-        for i in range(0, len(cluster1.rep)):
-            for k in range(0, len(cluster2.rep)):                
-                distActual = dist(cluster1.rep[i], cluster2.rep[k]);      
-                if (distActual < minDist):
-                    minDist = distActual;
-        return minDist
-                    
-    def _crearCola(self):
-        self._cola = [CureCluster(patron) for patron in self._datos];        
-        for i in range(0, len(self._cola)):
-            minDist = float('inf');
-            minIndi = -1;            
-            for k in range(0, len(self._cola)):
-                if (i != k):
-                    dist = self._distanciaClusters(self._cola[i], self._cola[k]);
-                    if (dist < minDist):
-                        minDist = dist;
-                        minIndi = k;
-            self._cola[i].masCercano   = self._cola[minIndi];
-            self._cola[i].distancia = minDist;          
-        #Ordena la cola por distancia            
-        self._cola.sort(key = lambda x: x.distMasCercano, reverse = False);
-    def _crearArbolKD(self):            
-       self._arbol =  kdtree();    
+    def get_max_point(self, new_examples, new_mean, data, temp_set):   
+        maxDist = float("-inf") #-sys.maxint;
+        for exampleId in new_examples:
+            minDist = float("inf")
+            for tempId in temp_set:
+                dist = np.linalg.norm(data[exampleId,:] - data[tempId,:])
+                if (dist < minDist):
+                    minDist = dist
+            if (minDist >= maxDist):
+                maxDist = minDist
+                max_point = exampleId
+        return max_point        
     
-       #print(reduce(lambda lista, x: lista + x.rep, self._cola, list()))
-       for cluster in self._cola:           
-            for representante in cluster.rep:    
-                self._arbol.insert(representante.tolist()[0],cluster)                   
-  
-       
-    def _borarRepresentantes(self,cluster):        
-        for punto in cluster.rep:
-            self._arbol.remove(punto.tolist()[0]);
-    def ejecutar(self):
-        while (len(self._cola) > self._k):
-            cluster1 = self._cola[0];       #Cluster que tiene el vecino más cercano
-            cluster2 = cluster1.masCercano; #Cluster más cercano
-            
-            #Saco los  dos clusteres
-            self._cola.remove(cluster1)
-
-            self._cola.remove(cluster2)
-            
-            self._borarRepresentantes(cluster1)
-            self._borarRepresentantes(cluster2)
-            
-            clusterNuevo = self._unirClusters(cluster1, cluster2);
-            
-            self._insertarNuevoRepresentantes(clusterNuevo);
-            
-            cluster_relocation_requests = [];
-            clusterNuevo.masCercano = self._cola[0]; #eligo un cluster arbitrario
-            clusterNuevo.distMasCercano = self._distanciaClusters(clusterNuevo, clusterNuevo.masCercano);
-            
-            for clus in self._cola:
-                dist = self._distanciaClusters(clusterNuevo, clus);
-                if (dist < clusterNuevo.distMasCercano):
-                    clusterNuevo.masCercano = clus;
-                    clusterNuevo.distMasCercano = dist;
-                    
-                if ( (clus.masCercano is cluster1) or (clus.masCercano is cluster2) ):
-                     if (clus.distMasCercano < dist):
-                         (clus.masCercano, clus.distMasCercano) = self._clusterMasCercano(clus, dist);
-                     else:
-                        clus.masCercano = clusterNuevo;
-                        clus.distMasCercano = dist;
-                        
-                     cluster_relocation_requests.append(clus);
-                elif (clus.distMasCercano > dist):
-                   clus.masCercano = clusterNuevo;
-                   clus.distMasCercano = dist;
-                   cluster_relocation_requests.append(clus);
-           
-            self._insertarNuevoCluster(clusterNuevo);
-            [self._realocarCluster(item) for item in cluster_relocation_requests];
-        
-            # Change cluster representation
-            self._clusters = [ cureCluster.puntos for cureCluster in self._cola ];
-    def _insertarNuevoCluster(self, cluster):        
-        for i in range(len(self._cola)):
-            if (cluster.distMasCercano < self._cola[i].distMasCercano):
-                self._cola.insert(i, cluster);
-                return;
+    def get_further_point_from_mean(self, new_mean, new_examples, data):
+        maxDist = float("-inf") #-sys.maxint;
+        for exampleId in new_examples:            
+            dist = np.linalg.norm(data[exampleId,:] - new_mean)
+            if (dist >= maxDist):
+                maxDist = dist
+                max_point = exampleId    
+        return max_point        
     
-        self._cola.append(cluster);                          
-    def _realocarCluster(self, cluster):        
-        self._cola.remove(cluster);
-        self._insertarNuevoCluster(cluster);
-    def _clusterMasCercano(self, cluster, distance):
-       
-        
-        minCluster = None;
-        minDist = float('inf');
-        
-        for punto in cluster.rep:     
-            puntoLista = punto.tolist()[0]
-            vecinosProximos = self._arbol.find_nearest_dist_nodes(puntoLista, distance);
-            for (distCandidato, kdtree_node) in vecinosProximos:
-                if ( (distCandidato < minDist) and (kdtree_node is not None) and (kdtree_node.payload is not cluster) ):
-                    minDist = distCandidato;
-                    minCluster = kdtree_node.payload;
-                    
-        return (minCluster, minDist);                            
-    def _insertarNuevoRepresentantes(self,clusterNuevo):      
-        for representante in clusterNuevo.rep:
-            self._arbol.insert(representante.tolist()[0], clusterNuevo);            
-            
-    def _unirClusters(self, cluster1, cluster2):
-        """!
-        @brief Une los dos clusters y calcula los representantes y la media        
-        """
-        
-        clusterNuevo = CureCluster();
-        
-        clusterNuevo.puntos = cluster1.puntos + cluster2.puntos;
-        
-      
-        clusterNuevo.media = ((cluster1.cantPuntos() * cluster1.media) + (cluster2.cantPuntos() + cluster2.media));
-        clusterNuevo.media = clusterNuevo.media /(cluster1.cantPuntos() + cluster2.cantPuntos());
-        
-        listaTemp = list(); 
-        
-        for idx in range(self._rep): #por cada uno de los respresenatnes
-            maxDist = 0;
-            maxPunto = None;
-            
-            for punto in clusterNuevo.puntos:
-                minDist = 0;
-                if (idx == 0):
-                    minDist = dist(punto, clusterNuevo.media);                    
-                else:
-                    minTempDist = float('inf')
-                    for q in listaTemp:      
-                        distActual = dist(punto, q);                    
-                        if (minTempDist < distActual):
-                            minTempDist = distActual
-                    minDist = minTempDist                  
-                    
-                if (minDist >= maxDist):
-                    maxDist = minDist;
-                    maxPunto = punto;
+    def shrink_representatives(self, representatives, new_mean, alpha):
+        new_representatives = []
+        for rep in representatives:
+            new_representatives.append(rep + alpha * (new_mean - rep))
+        return new_representatives    
+    
+    def merge(self, c1, c2, data, metric):
+        n1 = len(c1.exampleIds)
+        n2 = len(c2.exampleIds)
+        new_mean = (n1 * c1.mean + n2 * c2.mean) / (n1 + n2)
+        new_examples = c1.exampleIds + c2.exampleIds
+        temp_set = [self.get_further_point_from_mean(new_mean, new_examples, data)]
+        upper_bound = min(self.cant_rep, len(new_examples))        
+        for repId in range(1, upper_bound):
+            #max_point is an index!!
+            max_point = self.get_max_point(new_examples, new_mean, data, temp_set)            
+            temp_set.append(max_point)
+        new_representatives = self.shrink_representatives(data[temp_set, :], new_mean, self.alpha)
+        return Cluster(new_representatives, new_examples, new_mean)    
+    
+class Cluster:
+    def __init__(self, examples, exampleIds, mean):
+        self.exampleIds = exampleIds
+        self.representatives = examples
+        self.mean = mean
+     
+    @classmethod     
+    def singleton(cls, example, exampleId):
+        return cls([example], [exampleId], example)
+         
+def cure(data, K, cant_rep, alpha):    
+    cure_instance = Cure(K, cant_rep, alpha)
+    clusters = cure_instance.agglomerative_clustering(data, single_dist, euclidean_dist)        
+    return clusters 
+
+K = 3;
+cant_rep = 3;
+alpha = 0.5;
+file_path = 'Iris.csv'
+#file_path = 'skin_points.csv'
+df=pd.read_csv(file_path, sep=';',header=0)
+#df=pd.read_csv(file_path, sep=',',header=None)
+data = df.values
+(nRows, nCols) = data.shape
+#data = data[0:nRows:50,:]
+
+noLabels = False
+if (not noLabels):
+    labels = data[:,4]
+data = data[:,0:4]
+clusterObjs = cure(data, K, cant_rep, alpha)
+clusters = [obj.exampleIds for obj in clusterObjs]
+
+#plotting
+if (not noLabels):
+    for (i,c) in enumerate(np.unique(labels)):
+        labels[labels == c] = i
+    
+    (nRows, nCols) = data.shape
+    fig_size = 10;
+    (fig, axes) = plt.subplots(nCols, nCols, figsize=(fig_size, fig_size));
+    fig.suptitle('Real')
+    for i in range(0, nCols):
+        for j in range(0, nCols):
+            if (i == j):
+                continue
+            axes[i, j].plot(data[labels == 0,i],data[labels == 0,j], 'ro', ms=5)
+            axes[i, j].plot(data[labels == 1,i],data[labels == 1,j], 'bo', ms=5)
+            axes[i, j].plot(data[labels == 2,i],data[labels == 2,j], 'go', ms=5)
+
+(fig, axes) = plt.subplots(nCols, nCols, figsize=(fig_size, fig_size));
+fig.suptitle('Found')
+for i in range(0, nCols):
+    for j in range(0, nCols):
+        if (i == j):
+            continue
+        axes[i, j].plot(data[clusters[0],i],data[clusters[0],j], 'ro', ms=5)
+        axes[i, j].plot(data[clusters[1],i],data[clusters[1],j], 'bo', ms=5)
+        if (K >= 3):
+            axes[i, j].plot(data[clusters[2],i],data[clusters[2],j], 'go', ms=5)
+            if (K >= 4):
+                axes[i, j].plot(data[clusters[3],i],data[clusters[3],j], 'yo', ms=5)
 
 
-            i=0
-            encontre=False
-            while (i<len(listaTemp) and not(encontre)):            
-                if (norm(listaTemp[i]-maxPunto)<0.00001):
-                    encontre=True
-                i=i+1
-            
-            if (not(encontre)):
-                listaTemp.append(maxPunto);
-                
-        #Los achico hacia la media                
-        for punto in listaTemp:
-            clusterNuevo.rep.append(punto + self._comp*(clusterNuevo.media - punto))      
-        
-        return clusterNuevo;
-            
-            
-            
-datos = clusterInCluster()
-datos = datos[:,range(0,2)]
-c = CURE(datos,5)
-r = c.ejecutar()
-            
         
