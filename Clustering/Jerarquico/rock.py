@@ -67,7 +67,8 @@ class ROCK:
 
                           
 
-datos=outlier(N=150)
+
+datos=outlier(N=150,outliers=0.2)
 datos=datos[:,range(0,2)]
 r = ROCK(datos,10)
 clusters = r.ejecutar(4,0.5)

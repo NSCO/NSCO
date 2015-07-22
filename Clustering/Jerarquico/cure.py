@@ -43,7 +43,7 @@ class Cure:
                     d = dist_fun(clusters[i].representatives, clusters[j].representatives, metric);
                     #hack                    
                     #d = d + (len(clusters[i].exampleIds) * len(clusters[j].exampleIds))/(nRows**2) * 100 #???
-                    d = d * (1 + 17 * (len(clusters[i].exampleIds) * len(clusters[j].exampleIds))/((nRows/2)**2)) #???
+                    #d = d * (1 + 17 * (len(clusters[i].exampleIds) * len(clusters[j].exampleIds))/((nRows/2)**2)) #???
                     if (d < dmin):
                         dmin = d;
                         imin = i;
@@ -113,53 +113,54 @@ def cure(data, K, cant_rep, alpha):
     clusters = cure_instance.agglomerative_clustering(data, single_dist, euclidean_dist)        
     return clusters 
 
-K = 3;
-cant_rep = 3;
-alpha = 0.5;
-file_path = 'Iris.csv'
-#file_path = 'skin_points.csv'
-df=pd.read_csv(file_path, sep=';',header=0)
-#df=pd.read_csv(file_path, sep=',',header=None)
-data = df.values
-(nRows, nCols) = data.shape
-#data = data[0:nRows:50,:]
-
-noLabels = False
-if (not noLabels):
-    labels = data[:,4]
-data = data[:,0:4]
-clusterObjs = cure(data, K, cant_rep, alpha)
-clusters = [obj.exampleIds for obj in clusterObjs]
-
-#plotting
-if (not noLabels):
-    for (i,c) in enumerate(np.unique(labels)):
-        labels[labels == c] = i
-    
+if __name__ == "__main__": 
+    K = 3;
+    cant_rep = 3;
+    alpha = 0.5;
+    file_path = 'Iris.csv'
+    #file_path = 'skin_points.csv'
+    df=pd.read_csv(file_path, sep=';',header=0)
+    #df=pd.read_csv(file_path, sep=',',header=None)
+    data = df.values
     (nRows, nCols) = data.shape
-    fig_size = 10;
+    #data = data[0:nRows:50,:]
+    
+    noLabels = False
+    if (not noLabels):
+        labels = data[:,4]
+    data = data[:,0:4]
+    clusterObjs = cure(data, K, cant_rep, alpha)
+    clusters = [obj.exampleIds for obj in clusterObjs]
+    
+    #plotting
+    if (not noLabels):
+        for (i,c) in enumerate(np.unique(labels)):
+            labels[labels == c] = i
+        
+        (nRows, nCols) = data.shape
+        fig_size = 10;
+        (fig, axes) = plt.subplots(nCols, nCols, figsize=(fig_size, fig_size));
+        fig.suptitle('Real')
+        for i in range(0, nCols):
+            for j in range(0, nCols):
+                if (i == j):
+                    continue
+                axes[i, j].plot(data[labels == 0,i],data[labels == 0,j], 'ro', ms=5)
+                axes[i, j].plot(data[labels == 1,i],data[labels == 1,j], 'bo', ms=5)
+                axes[i, j].plot(data[labels == 2,i],data[labels == 2,j], 'go', ms=5)
+    
     (fig, axes) = plt.subplots(nCols, nCols, figsize=(fig_size, fig_size));
-    fig.suptitle('Real')
+    fig.suptitle('Found')
     for i in range(0, nCols):
         for j in range(0, nCols):
             if (i == j):
                 continue
-            axes[i, j].plot(data[labels == 0,i],data[labels == 0,j], 'ro', ms=5)
-            axes[i, j].plot(data[labels == 1,i],data[labels == 1,j], 'bo', ms=5)
-            axes[i, j].plot(data[labels == 2,i],data[labels == 2,j], 'go', ms=5)
-
-(fig, axes) = plt.subplots(nCols, nCols, figsize=(fig_size, fig_size));
-fig.suptitle('Found')
-for i in range(0, nCols):
-    for j in range(0, nCols):
-        if (i == j):
-            continue
-        axes[i, j].plot(data[clusters[0],i],data[clusters[0],j], 'ro', ms=5)
-        axes[i, j].plot(data[clusters[1],i],data[clusters[1],j], 'bo', ms=5)
-        if (K >= 3):
-            axes[i, j].plot(data[clusters[2],i],data[clusters[2],j], 'go', ms=5)
-            if (K >= 4):
-                axes[i, j].plot(data[clusters[3],i],data[clusters[3],j], 'yo', ms=5)
+            axes[i, j].plot(data[clusters[0],i],data[clusters[0],j], 'ro', ms=5)
+            axes[i, j].plot(data[clusters[1],i],data[clusters[1],j], 'bo', ms=5)
+            if (K >= 3):
+                axes[i, j].plot(data[clusters[2],i],data[clusters[2],j], 'go', ms=5)
+                if (K >= 4):
+                    axes[i, j].plot(data[clusters[3],i],data[clusters[3],j], 'yo', ms=5)
 
 
         
