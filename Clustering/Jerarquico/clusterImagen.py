@@ -11,6 +11,7 @@ Created on Tue Jul 21 16:40:34 2015
 
 @author: luciano
 """
+from   cpp.curecpp import curecpp
 from pyclustering.cluster.cure import cure
 from scipy import misc
 #from cure import cure 
@@ -44,12 +45,12 @@ imgplot = plt.imshow(np.reshape(m[:,2],(imagen.shape[0],imagen.shape[1])),cmap=c
 K=1
 imagenNueva = imagen
 #clusters = cure(m,3,6,0.5)
-cure_instance = cure(puntos, 3, 5, 0.5, True);
-cure_instance.process();
-clusters = cure_instance.get_clusters();
+datos = np.array(puntos)
+cure_instance = curecpp(datos, 3, 5, 0.5);
+clusters = cure_instance
 for cluster in clusters:    
    color = [rd.randint(0,255), rd.randint(0,255),rd.randint(0,255)]
    for i in cluster:
-      imagenNueva[i[0],i[1],:] = color  
-       
+      imagenNueva[puntos[i][0],puntos[i][1],:] = color  
+plt.figure()       
 plt.imshow(imagenNueva)
