@@ -189,8 +189,7 @@ struct Cure
     {
         vector<Eigen::RowVectorXd> newRepresentatives;
         for (unsigned int i : tempSet) {
-            Eigen::RowVectorXd r = representatives.row(i);
-            newRepresentatives.push_back( r + alpha * (new_mean - r));
+            newRepresentatives.push_back( representatives.row(i) + alpha * (new_mean - representatives.row(i)));
         }
         return newRepresentatives;
     }
