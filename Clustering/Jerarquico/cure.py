@@ -4,12 +4,13 @@ Created on Tue Jul 21 17:12:32 2015
 
 @author: geraq
 """
+import sys
 import numpy as np
 import sys as sys
 import matplotlib.pyplot as plt
 import pandas as pd
 import scipy.spatial.distance as spdist
-
+from   cpp.curecpp import curecpp
 def euclidean_dist(e1, e2):
     return np.sqrt(np.sum((e1 - e2)**2))
 
@@ -38,6 +39,7 @@ class Cure:
             print c
             imin = -1; jmin = -1;
             dmin = sys.maxint
+
             for i in range(0, c - 1):
                 for j in range(i + 1, c):
                     d = dist_fun(clusters[i].representatives, clusters[j].representatives, metric);
@@ -115,8 +117,8 @@ def cure(data, K, cant_rep, alpha):
 
 if __name__ == "__main__": 
     K = 3;
-    cant_rep = 3;
-    alpha = 0.5;
+    cant_rep = 5;
+    alpha = 0.9;
     file_path = 'Iris.csv'
     #file_path = 'skin_points.csv'
     df=pd.read_csv(file_path, sep=';',header=0)
@@ -124,14 +126,16 @@ if __name__ == "__main__":
     data = df.values
     (nRows, nCols) = data.shape
     #data = data[0:nRows:50,:]
-    
     noLabels = False
     if (not noLabels):
         labels = data[:,4]
-    data = data[:,0:4]
-    clusterObjs = cure(data, K, cant_rep, alpha)
-    clusters = [obj.exampleIds for obj in clusterObjs]
-    
+    data = data[:,0:4].astype(np.float64)
+    #clusterObjs = cure(data, K, cant_rep, alpha)
+    #clusters = [obj.exampleIds for obj in clusterObjs]
+
+    clusters = curecpp(data, K, cant_rep, alpha)
+     
+
     #plotting
     if (not noLabels):
         for (i,c) in enumerate(np.unique(labels)):
