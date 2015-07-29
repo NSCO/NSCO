@@ -106,6 +106,16 @@ class EM:
       plt.plot(datos[:,0],datos[:,1],'ro')
       for j in range(0,k):
           plt.plot(self.distributions[j].mu[0],self.distributions[j].mu[1],'b*')
+          (val,vec) = np.linalg.eig(self.distributions[j].sigma)
+          print(vec)
+          for l in range(0,datos.shape[1]):
+             
+             punto_final   = self.distributions[j].mu + vec[:,l] * math.sqrt((val[l]))
+             punto_inicial = self.distributions[j].mu - vec[:,l] * math.sqrt((val[l]))
+             plt.plot( [punto_inicial[0],punto_final[0]],[punto_inicial[1],punto_final[1]],'-k')
+          
+          
+          
       
       plt.draw()
       plt.pause(0.1)
