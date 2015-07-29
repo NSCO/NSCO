@@ -14,15 +14,9 @@ class GaussianComponent:
     self.tita  = tita
 
   def eval(self,x):   
-    var =  multivariate_normal(mean=self.mu, cov=self.sigma)
-    return var.pdf(x)
-    #print(len(x))
-    
+    #ar =  multivariate_normal(mean=self.mu, cov=self.sigma)
+    #return var.pdf(x)    
     dx  = x-self.mu
-#    print str(self.sigma)
-#    print str(self.mu)
-#    print str(x)
-#    print str(dx)
     sigma_inv = np.linalg.inv(self.sigma)
     constant=1/np.sqrt(((2*np.pi)**len(x))*np.linalg.det(self.sigma) )
     exponent=np.exp( -0.5  * dx.dot(sigma_inv).dot(dx.T))
@@ -51,7 +45,6 @@ class EM:
   def maximization(self,datos):
     (nFilas, nCols) = datos.shape
     w_sum = np.sum(self.w,axis=0)
-    print(w_sum)
     for j in range(0, self.k):
         self.distributions[j].tita = w_sum[j] / nFilas
         self.distributions[j].mu = np.zeros( (nCols))
@@ -107,7 +100,6 @@ class EM:
       for j in range(0,k):
           plt.plot(self.distributions[j].mu[0],self.distributions[j].mu[1],'b*')
           (val,vec) = np.linalg.eig(self.distributions[j].sigma)
-          print(vec)
           for l in range(0,datos.shape[1]):
              
              punto_final   = self.distributions[j].mu + vec[:,l] * math.sqrt((val[l]))
@@ -121,9 +113,8 @@ class EM:
       plt.pause(0.1)
       
       
-      #print 'W: %s' % str(self.w)
+
       self.expectation(datos)
-      #print 'W: %s' % str(self.w)
       self.maximization(datos)
       likelihood_ant = likelihood_act
       likelihood_act = self.likelihood(datos)
