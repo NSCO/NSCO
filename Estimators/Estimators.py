@@ -7,17 +7,58 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.stats import multivariate_normal
 from sklearn.metrics import confusion_matrix
+import scipy
 def  sphere_volume(dimensions,radius):
     V = math.pi ** float(dimensions/2) / math.gamma((dimensions/2) + 1)
-    return V*radius
+    return V*radius**dimensions  
+    
         
 
+def KL(z1,z2):
+    z1=np.ravel(z1)
+    z2=np.ravel(z2)
+    kl = 0
+    for i in range(0,len(z1)):             
+        kl+=z1[i]*np.log((z1[i]+0.00000001)/(z2[i]+0.00000001))     
+    return kl
+
 class Estimator:
-    def __init__(self,datos):
-        self.datos = datos
     def estimate(self,x):
         raise NotImplementedError(":(")
-
+    
+    def KL(self,q,mesh):
+        x = np.array(mesh[0])    
+        y = np.array(mesh[1])    
+        dx = abs(x[0][0] - x[0][1])
+        dy = abs(y[0][0] - y[1][0])        
+        z1=[]
+        z2=[]
+        for i in range(0,points_per_dimension):
+            for j in range(0,points_per_dimension):
+               x_val = x[i,j]
+               y_val = y[i,j]
+               point2d = (np.array([x_val, y_val]))
+               z1.append(self.estimate(point2d))
+               z2.append(q.estimate(point2d))
+        return (KL(z1,z2)*dx*dy,z1,z2)
+        
+        
+class GaussianEstimator(Estimator):
+    def __init__(self,means,covas):
+        
+        self.constant = 1/float(len(means))
+        self.distributions = []
+        for mu,sigma in zip(means,covas):
+           self.distributions.append(scipy.stats.multivariate_normal(mu,sigma))
+           
+    def estimate(self,x):
+        contributions = sum([d.pdf(x) for d in self.distributions])
+        return contributions* self.constant
+        
+class DataEstimator(Estimator):
+    def __init__(self,datos):
+        self.datos = datos
+        
 class BayesEstimator(Estimator):
     def __init__(self,datos):
         Estimator.__init__(self, datos)
@@ -25,9 +66,9 @@ class BayesEstimator(Estimator):
         return 1 
 
         
-class KNNEstimator(Estimator):
+class KNNEstimator(DataEstimator):
     def __init__(self,datos,k):
-        Estimator.__init__(self, datos)
+        DataEstimator.__init__(self, datos)
         self.k = k
     def estimate(self, x):
         (farthest_neighbor_distance, farthest_neighbor_index) = self.find_farthest_neighbor(x)
@@ -45,9 +86,9 @@ class KNNEstimator(Estimator):
        heapq.heapify(distances)
        return  heapq.nsmallest(self.k, distances)
       
-class ParzenEstimator(Estimator):
+class ParzenEstimator(DataEstimator):
     def __init__(self, datos,window_size,window):
-        Estimator.__init__(self,datos)
+        DataEstimator.__init__(self,datos)
         self.window=window;
         self.window_size=window_size
     def estimate(self, x):
@@ -113,11 +154,11 @@ def read_iris():
     return (data,labels)
     
 
-def evaluate_estimator_meshgrid(data,estimator,points_per_dimension):
-    mins = np.min(data,0) - 1
-    maxs = np.max(data,0) + 1
+def evaluate_estimator_meshgrid(data,estimator,points_per_dimension=30,padding=1):
+    mins = np.min(data,0) - padding
+    maxs = np.max(data,0) + padding
     #np.meshgrid([mins[0]:maxs[0]:0.01 ])
-    points_per_dimension = 30
+    
     (x, y) = np.meshgrid(np.linspace(mins[0], maxs[0], points_per_dimension), np.linspace(mins[1], maxs[1], points_per_dimension))
     x = np.array(x)    
     y = np.array(y)    
@@ -128,6 +169,10 @@ def evaluate_estimator_meshgrid(data,estimator,points_per_dimension):
            y_val = y[i,j]
            z[i,j] = estimator.estimate(np.array([x_val, y_val]))
     return (x,y,z)
+
+
+
+
 
 def plot_density(x,y,z,data,labels,c,ax=None):
      
@@ -149,53 +194,54 @@ class Classifier:
         estimations = [ estimator.estimate(x) for estimator in self.estimators]
         return np.argmax(estimations)
 
-# MAIN
-data,labels = read_iris()
-(nRows, nCols) = np.shape(data) 
-#k=5
-#estimator= KNNEstimator(data, k)
-
-#sigma=1/math.sqrt(nRows)
-#sigma = np.cov(data.T) * 1/math.sqrt(nRows)
-#estimator=ParzenEstimator(data,sigma,gaussian_window)
-
-#radius=0.3
-#estimator=ParzenEstimator(data,radius,chebyshev_window)
-
-sigmas = np.diag(np.cov(data.T))*(1/math.sqrt(nRows))
-#estimator=ParzenEstimator(data,sigmas,kernel_product_window)
-
-points_per_dimension=30
-#x,y,z=evaluate_estimator_meshgrid(data,estimator,points_per_dimension)
-
-#plot_density(x,y,z,data,labels)
-
-#dx = abs(x[0][0] - x[0][1])
-#dy = abs(y[0][0] - y[1][0])
-#print np.sum(z) * dx * dy
-
-label_range = np.unique(labels)
-estimators=[]
-fig = plt.figure()
-ax = fig.gca(projection="3d")  
-plt.ion()
-plt.show()
-colors=['r','g','b']
-for i in label_range:
-    data_filtered=data[labels==i,:]
-    (n_rows_f, n_cols_f) = np.shape(data) 
-    #sigmas_f = np.mean(np.diag(np.cov(data_filtered.T)))*(13/math.sqrt(n_rows_f))
-    sigmas_f = np.cov(data_filtered.T)*(0.5/math.sqrt(n_rows_f))    
-    estimator=ParzenEstimator(data_filtered,sigmas_f,gaussian_window)
-    estimators.append(estimator)
-    x,y,z=evaluate_estimator_meshgrid(data_filtered,estimator,points_per_dimension)
-    plot_density(x,y,z,data_filtered,labels[labels==i],colors[i],ax)
-plt.draw()
-
+if __name__ == '__main__':
+    # MAIN
+    data,labels = read_iris()
+    (nRows, nCols) = np.shape(data) 
+    #k=5
+    #estimator= KNNEstimator(data, k)
     
-c = Classifier(estimators)
-predictions = [c.classify(i) for i in data]
-print confusion_matrix(labels.astype(float), predictions)    
-  
-
+    #sigma=1/math.sqrt(nRows)
+    #sigma = np.cov(data.T) * 1/math.sqrt(nRows)
+    #estimator=ParzenEstimator(data,sigma,gaussian_window)
+    
+    #radius=0.3
+    #estimator=ParzenEstimator(data,radius,chebyshev_window)
+    
+    sigmas = np.diag(np.cov(data.T))*(1/math.sqrt(nRows))
+    #estimator=ParzenEstimator(data,sigmas,kernel_product_window)
+    
+    points_per_dimension=30
+    #x,y,z=evaluate_estimator_meshgrid(data,estimator,points_per_dimension)
+    
+    #plot_density(x,y,z,data,labels)
+    
+    #dx = abs(x[0][0] - x[0][1])
+    #dy = abs(y[0][0] - y[1][0])
+    #print np.sum(z) * dx * dy
+    
+    label_range = np.unique(labels)
+    estimators=[]
+    fig = plt.figure()
+    ax = fig.gca(projection="3d")  
+    plt.ion()
+    plt.show()
+    colors=['r','g','b']
+    for i in label_range:
+        data_filtered=data[labels==i,:]
+        (n_rows_f, n_cols_f) = np.shape(data) 
+        #sigmas_f = np.mean(np.diag(np.cov(data_filtered.T)))*(13/math.sqrt(n_rows_f))
+        sigmas_f = np.cov(data_filtered.T)*(0.5/math.sqrt(n_rows_f))    
+        estimator=ParzenEstimator(data_filtered,sigmas_f,gaussian_window)
+        estimators.append(estimator)
+        x,y,z=evaluate_estimator_meshgrid(data_filtered,estimator,points_per_dimension)
+        plot_density(x,y,z,data_filtered,labels[labels==i],colors[i],ax)
+    plt.draw()
+    
+        
+    c = Classifier(estimators)
+    predictions = [c.classify(i) for i in data]
+    print confusion_matrix(labels.astype(float), predictions)    
+      
+    
   
