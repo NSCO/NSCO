@@ -8,6 +8,11 @@ from mpl_toolkits.mplot3d import Axes3D
 from scipy.stats import multivariate_normal
 from sklearn.metrics import confusion_matrix
 import scipy
+import sys
+sys.path.append('/home/luciano/fuentes/NSCO/Estimators')
+sys.path.append('/home/luciano/fuentes/NSCO/datos/Artificiales/')
+
+from clusterincluster import clusterInCluster
 def  sphere_volume(dimensions,radius):
     V = math.pi ** float(dimensions/2) / math.gamma((dimensions/2) + 1)
     return V*radius**dimensions  
@@ -196,7 +201,12 @@ class Classifier:
 
 if __name__ == '__main__':
     # MAIN
-    data,labels = read_iris()
+    #data,labels = read_iris()
+    #(nRows, nCols) = np.shape(data) 
+    data = np.array(clusterInCluster(100));   
+    #labels = data[:,2].astype(np.int32)
+    labels = np.zeros(data.shape[0]).astype(np.int32)
+    data   = data[:,0:2] 
     (nRows, nCols) = np.shape(data) 
     #k=5
     #estimator= KNNEstimator(data, k)
