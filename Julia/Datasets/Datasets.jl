@@ -3,7 +3,7 @@ module Datasets
 using DataFrames
 
 function skinpoints()
-  data=readtable("skin_points.csv",separator=',',header=false)
+  data=readtable(joinpath(dirname(@__FILE__),"skin_points.csv"),separator=',',header=false)
   x=convert(Matrix,data)
   x'
 end
