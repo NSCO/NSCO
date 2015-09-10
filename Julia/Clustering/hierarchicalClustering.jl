@@ -42,8 +42,9 @@ end
   for i=1:nCols
     push!(clusters, [i])
   end
-  for c=nCols:-1:conf.k
-    println(c)    
+  for c=nCols:-1:conf.k+1
+    print("lpm")
+    println(length(clusters))    
     imin = -1
     jmin = -1
     dmin = typemax(Int64)
