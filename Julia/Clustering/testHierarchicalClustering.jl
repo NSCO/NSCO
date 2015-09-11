@@ -11,7 +11,7 @@ m = m[:,1:50:end]
 selected = 4
 k = 4
 configs = [hc.single_linkage_configuration, hc.complete_linkage_configuration,
-  hc.average_linkage_configuration, hc.ward_linkage_configuration]
+    hc.average_linkage_configuration, hc.ward_linkage_configuration]
 tic()
 clusters=hc.build_model(m, configs[selected](hc.euclidean_dist, k))
 toc()
@@ -23,6 +23,6 @@ using PyPlot
 colors=["red","yellow","blue","green"]
 figure()
 for i=1:length(clusters)
-  scatter(x=m[1,clusters[i]], y=m[2,clusters[i]],color=colors[i])
+    scatter(x=m[1,clusters[i]], y=m[2,clusters[i]],color=colors[i])
 end
 title("Iris")
