@@ -6,13 +6,13 @@ using PyPlot
 subplot(121)
 dataset=Datasets.skinpoints()
 dataset=dataset[1:100:end,:]
-scatter(dataset[:,1], dataset[:,2])
+scatter(dataset[1,:], dataset[2,:])
 title("Skin points")
 
 
 subplot(122)
 dataset=Datasets.iris()
-scatter(dataset[:,1], dataset[:,2])
+scatter(dataset[1,:], dataset[2,:])
 title("Iris")
 
 #using Gadfly
