@@ -82,11 +82,11 @@ def ward_linkage(data, k, metric):
     return agglomerative_clustering(data, k, error_sum_squares, metric)
 
 
-use_iris = 1
-k = 3
+use_iris = 0
+k = 4
 
 functions = [single_linkage, complete_linkage, average_linkage, ward_linkage]
-selected_func = 2
+selected_func = 3
 
 if (use_iris):
     file_path = 'Iris.csv'
@@ -128,11 +128,20 @@ else:
     original_clusters = data[:,2]
     data = data[:,0:2]
     
+    file_path = 'skin_points.csv'
+    df=pd.read_csv(file_path, sep=',',header=None)
+    #data = df.values[:, 0:2]
+    data  = df.values
+    data = data[0:data.shape[0]:50,:].astype(np.float64)
+    
     clusters = functions[selected_func](data, k, euclidean_dist);      
     
     plt.plot(data[clusters[0],0],data[clusters[0],1], 'ro', ms=5)
     plt.plot(data[clusters[1],0],data[clusters[1],1], 'bo', ms=5)
-    plt.plot(data[clusters[2],0],data[clusters[2],1], 'go', ms=5)
+    if k > 1:
+        plt.plot(data[clusters[2],0],data[clusters[2],1], 'go', ms=5)
+        if k > 2:
+            plt.plot(data[clusters[3],0],data[clusters[3],1], 'yo', ms=5)
 
 
 

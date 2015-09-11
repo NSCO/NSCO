@@ -1,0 +1,7 @@
+a = rand(10000,10000)
+tic()
+sum(a,1)
+toc()
+tic()
+sum(a,2)
+toc()
