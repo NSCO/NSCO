@@ -52,7 +52,7 @@ function computepriors(labels)
         return priors
 end
 
-function train(data::Matrix,labels::Matrix,config::NaiveBayesConfig)
+function train(data::Matrix,labels::Array,config::NaiveBayesConfig)
     label_range = sort(unique(labels))
     (nAttrs, nExamples) = size(data)
     #estimate priors P(Ci):
