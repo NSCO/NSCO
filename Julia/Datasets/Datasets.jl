@@ -19,7 +19,9 @@ function iris()
   end
   x',round(Int32,y),labels
 end
-
+function movie_revies()
+  return  readdlm(joinpath(dirname(@__FILE__),"movie_reviews.txt"),'\t', quotes=false)
+end
 function aprobacion()
   readtable("aprobacion.csv",separator=';',header=true)
 end
