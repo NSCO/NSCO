@@ -93,7 +93,7 @@ function classify(data::Matrix, model::NaiveBayesModel)
                   #println(mean)
                   #println(attrValue)
                   prob = 1 / (std * sqrt(2 * pi))
-                  prob = prob * exp((-1.0/2.0) * ((attrValue - mean) / std)^2)
+                  prob = prob * exp((-1/2) * ((attrValue - mean) / std)^2)
               else
                   #use the multinomial estimate, i.e. the proportions
                   distribution = model.parameters[a][label]
