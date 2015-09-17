@@ -6,8 +6,8 @@ push!(LOAD_PATH, dirname(@__FILE__))
 using Datasets
 using MeanShift
 
-#using PyCall
-#pygui(:qt)
+using PyCall
+pygui(:qt)
 using PyPlot
 data=Datasets.skinpoints()
 data=data[:,1:100:end]
