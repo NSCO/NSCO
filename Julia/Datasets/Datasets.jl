@@ -9,7 +9,8 @@ function skinpoints()
 end
 
 function iris()
-  data=readtable("Iris.csv",separator=';',header=true)
+  #data=readtable("Iris.csv",separator=';',header=true)
+  data=readtable(joinpath(dirname(@__FILE__),"Iris.csv"),separator=';',header=true)
   x=convert(Matrix,data[:,1:4])
   y_labels=data[:,5]
   labels=unique(y_labels)
@@ -18,8 +19,11 @@ function iris()
     y[y_labels.==labels[i]]=i
   end
   x',round(Int32,y),labels
+  #x', y, labels
 end
-
+function movie_revies()
+  return  readdlm(joinpath(dirname(@__FILE__),"movie_reviews.txt"),'\t', quotes=false)
+end
 function aprobacion()
   readtable("aprobacion.csv",separator=';',header=true)
 end

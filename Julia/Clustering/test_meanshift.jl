@@ -22,4 +22,3 @@ c=ms.MeanShiftConfig(1.0,0.002,gaussian_window)
 println("Running algorithm...")
 
 clusters=ms.build_model(data,c)
-

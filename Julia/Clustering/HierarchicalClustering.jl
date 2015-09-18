@@ -3,8 +3,9 @@ module HierarchicalClustering
 export single_linkage_configuration, build_model, HierarchicalConfiguration, euclidean_dist,
     complete_linkage_configuration, average_linkage_configuration, ward_linkage_configuration
 
-type Clustering
+type ClusterModel
     assignments :: Array{Int64,1}
+    centroids :: Array{Float64, 2}
 end
 type HierarchicalConfiguration
     metric::Function
@@ -121,7 +122,23 @@ function build_model(data::Matrix, conf::HierarchicalConfiguration)
         append!(c1, c2)
         splice!(clusters, jmin)
     end
-  return clusters
+    (centroids, assignments) = clusterListToAssignments(clusters, data)
+    clusterModel = ClusterModel(assignments, centroids)
+  return clusterModel
+end
+
+function clusterListToAssignments(clusters, data)
+  (nAttrs, nExamples) = size(data)
+  centroids = zeros(nAttrs, length(clusters))
+  assignments = zeros(nExamples)
+  for c in 1:length(clusters)
+    for e in clusters[c]
+      assignments[e] = c
+      centroids[:,c] += data[:,e]
+    end
+    centroids[:,c] /= length(clusters[c]) #centroid as the mean of its points
+  end
+  return (centroids, assignments)
 end
 
 end
