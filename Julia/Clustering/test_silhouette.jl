@@ -19,3 +19,4 @@ clusterModel=hc.build_model(data, configs[selected](hc.euclidean_dist, k))
 
 idx = Silhouette.silhouette(data,clusterModel.assignments)
 print(idx)
+
