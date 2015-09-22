@@ -1,5 +1,5 @@
 module C45
-
+export build_model, pretty_print
 
 type TreeNode
     attributeName::AbstractString
@@ -12,6 +12,15 @@ end
 type C45Config
     minLeafNodeSize::Integer
     maximalDepth::Integer
+    attributeIsNumeric:: Array{Bool, 1}
+    attributeNames:: Array{AbstractString, 1}
+    labelNames:: Array{AbstractString, 1}
+end
+
+function copy(conf::C45Config)
+  return C45Config(conf.minLeafNodeSize, conf.maximalDepth,
+    Base.copy(conf.attributeIsNumeric), Base.copy(conf.attributeNames),
+    Base.copy(conf.labelNames))
 end
 
 
@@ -52,7 +61,6 @@ function calculate_numeric_attribute_entropy(D::Matrix,i,classes)
       if (minimumCutEntropy > cutPointEntropy)
             minimumCutEntropy  = cutPointEntropy
             minimumCutPoint    = cutPoint
-
       end
       #select the cut point with the least entropy
     end #for a in attrRange
@@ -71,111 +79,109 @@ function calculate_nominal_attribute_entropy(D::Matrix,i,classes)
   return (attrEntropy, attrRange)
 end
 
-function select_attribute(D::Matrix,attributeIsNumeric::Array{Bool,1},classes)
+function select_attribute(D::Matrix, attributeIsNumeric::Array{Bool,1}, classes)
     (nAttributes,nPatterns) = size(D)
     classRange  = sort(unique(classes))
     nClasses    = length(classRange)
     attrEntropy = zeros(nAttributes)
     cutPoints   = Array{Any,1}(nAttributes)
     for i=1:nAttributes
-        if (attributeIsNumeric[i])
-            (attrEntropy[i],cutPoints[i]) = calculate_numeric_attribute_entropy(D,i,classes)
-        else
-            (attrEntropy[i],cutPoints[i]) = calculate_nominal_attribute_entropy(D,i,classes)
-        end
+      if (attributeIsNumeric[i])
+          (attrEntropy[i],cutPoints[i]) = calculate_numeric_attribute_entropy(D,i,classes)
+      else
+          (attrEntropy[i],cutPoints[i]) = calculate_nominal_attribute_entropy(D,i,classes)
+      end
     end
     (entropyMin,indexMin) = findmin(attrEntropy)
     return (entropyMin,indexMin,cutPoints[indexMin])
 end
 
-function create_node(D::Matrix,attributeNames,attributeIsNumeric::Array{Bool,1},classes,conf::C45Config)
+function stopping_condition_met(D, classes, conf, depth)
+  return (size(D,2) < conf.minLeafNodeSize) | (length(unique(classes)) == 1) |
+         (depth == conf.maximalDepth)
+end
 
-     if (size(D,2) <= 5) || (length(unique(classes)) <= 1)
-       classRange = unique(classes)
+function create_node(D::Matrix, classes, conf::C45Config, depth)
+    #if (size(D,2) < conf.minLeafNodeSize) || (length(unique(classes)) <= 1)
+    if (stopping_condition_met(D, classes, conf, depth))
+       #create a leaf node
+       #classRange = unique(classes)
+       classRange = 1:length(conf.labelNames)
        countForClass = zeros(length(classRange))
-       i=1
-       for class in classRange
-           countForClass[i] = sum(classes.==class)
-           i=i+1
+       for i=1:length(classRange)
+           countForClass[i] = sum(classes .== classRange[i])
        end
-
-       treeNode =  TreeNode("", 0, Dict{Any,TreeNode}(), 0,attributeNames[indmax(countForClass)])
+       treeNode =  TreeNode("", 0, Dict{Any,TreeNode}(), 0, conf.labelNames[indmax(countForClass)])
     else
-
-      (entropyMin,selectedAttributeIndex,cutPoint) =  select_attribute(D,attributeIsNumeric,classes)
-
-      if (attributeIsNumeric[selectedAttributeIndex])
-          treeNode =TreeNode(attributeNames[selectedAttributeIndex], selectedAttributeIndex, Dict{Any,TreeNode}(), cutPoint,"")
+      #create an intern node with a child node per attr value
+      (entropyMin, selectedAttributeIndex, cutPoint) =  select_attribute(D, conf.attributeIsNumeric, classes)
+      if (conf.attributeIsNumeric[selectedAttributeIndex])
+          treeNode = TreeNode(conf.attributeNames[selectedAttributeIndex], selectedAttributeIndex, Dict{Any,TreeNode}(), cutPoint, "")
           filtered_indexes_less = D[selectedAttributeIndex,:] .<= cutPoint
           filtered_indexes_greater = !filtered_indexes_less
-
-          newDLess                 = copy(D[:,filtered_indexes_less])
+          newDLess                 = D[:,filtered_indexes_less]
           newClassesLess           = classes'[filtered_indexes_less]
-          newDGreater              = copy(D[:,filtered_indexes_greater])
+          newDGreater              = D[:,filtered_indexes_greater]
           newClassesGreater        = classes'[filtered_indexes_greater]
           #True si el valor es menor igual al punto de corte
-
-
-
-              treeNode.childrens[ true ] = create_node(newDLess,attributeNames,attributeIsNumeric,newClassesLess,conf)
-
+          treeNode.childrens[ true ] = create_node(newDLess, newClassesLess, copy(conf), depth + 1)
           #False si el valor es mayor al punto de corte
-
-
-            treeNode.childrens[ true ] = create_node(newDGreater,attributeNames,attributeIsNumeric,newClassesGreater,conf)
-
+          treeNode.childrens[ false ] = create_node(newDGreater, newClassesGreater, copy(conf), depth + 1)
       else
-          treeNode =TreeNode(attributeNames[selectedAttributeIndex], selectedAttributeIndex, Dict{Any,TreeNode}(), 0)
+          treeNode =TreeNode(conf.attributeNames[selectedAttributeIndex], selectedAttributeIndex, Dict{Any,TreeNode}(), 0, "")
           for attributeValue in cutPoint #cutPoint is attrRange
-
-              attributeValueIdx     = D[selectedAttributeIndex,:].==attributeValue
+              attributeValueIdx     = D[selectedAttributeIndex,:] .== attributeValue
               columnsIndexes        = 1:size(D,1) .!= selectedAttributeIndex
-              newAttributeNames     = attributeNames[attributeValueIdx]
-              newAttributeIsNumeric = newAttributeIsNumeric[attributeValueIdx]
+              conf.attributeNames     = conf.attributeNames[columnIndexes]
+              conf.attributeIsNumeric = conf.attributeIsNumeric[columnIndexes]
               newClasses            = classes'[attributeValueIdx]
-              newD                  = copy(D[columnsIndexes,attributeValueIdx])
-
-
-                treeNode.childrens[ attributeValue ] = create_node(newD, newAttributeNames,newAttributeIsNumeric,newClasses)
-
+              newD                  = D[columnIndexes, attributeValueIdx]
+              treeNode.childrens[ attributeValue ] = create_node(newD, newClasses, copy(conf), depth + 1)
           end
       end
     end
     return treeNode
 end
-function build_model(D::Matrix,attributeNames,attributeIsNumeric::Array{Bool,1},classes,conf::C45Config)
-   node =  create_node(D,attributeNames,attributeIsNumeric,classes,conf)
+
+function build_model(D::Matrix, classes, conf::C45Config)
+   depth = 0
+   node =  create_node(D, classes, copy(conf), depth)
    return node
 end
-function margin(margin::Integer)
 
-end
 function pretty_print(n, margin::Integer)
-   if ( n.attributeIndex != 0)
-      println(string(repeat(" " ,margin),"Attribute: ",n.attributeName))
-      for children in values(n.childrens)
-        pretty_print(children,margin+10)
-      end
+   if ( n.attributeIndex != 0) #not a leaf node
+     #TODO: distinguish between numeric and nominal in a better way
+     if (n.cutPoint == 0) #nominal
+       println(string(repeat(" " ,margin),"Attribute: ",n.attributeName))
+       #for children in values(n.childrens)
+       for key in keys(n.childrens)
+         child = n.childrens[key]
+         println(string(repeat(" " ,margin), "Branch: ", key))
+         pretty_print(child, margin + 4)
+       end
+     else
+       println(string(repeat(" " ,margin),"Attribute: ",n.attributeName))
+       #for children in values(n.childrens)
+       for key in keys(n.childrens)
+         child = n.childrens[key]
+         if key
+           println(string(repeat(" " ,margin), "Branch: <", n.cutPoint))
+         else
+           println(string(repeat(" " ,margin), "Branch: >", n.cutPoint))
+         end
+         pretty_print(child, margin + 4)
+       end
+     end
+
   else
        println(string(repeat(" " ,margin),"Class: ",n.className))
   end
 
 end
- function pretty_print(n)
+
+function pretty_print(n)
     pretty_print(n,0)
-
-end
 end
 
-push!(LOAD_PATH,dirname(@__FILE__))
-push!(LOAD_PATH,joinpath(dirname(@__FILE__),"../../../Datasets/"))
-push!(LOAD_PATH,joinpath(dirname(@__FILE__),"../../"))
-import Datasets
-using Datasets
-import C45
-using C45
-
-(data, labels, label_range) = Datasets.iris()
-attributeIsNumeric = collect(repeated(true,size(data,1)))
-model = C45.build_model(data,["Sepal-Length", "Sepal-Width", "Petal-Length","Petal-Width"],attributeIsNumeric, labels, C45.C45Config(17,345))
-C45.pretty_print(model)
+end
