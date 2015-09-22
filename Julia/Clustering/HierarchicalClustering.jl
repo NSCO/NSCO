@@ -102,7 +102,7 @@ function build_model(data::Matrix, conf::HierarchicalConfiguration)
         push!(clusters, [i])
     end
     for c=nCols:-1:conf.k+1
-        println(string("clusters=",length(clusters)))
+        #println(string("clusters=",length(clusters)))
         imin = -1
         jmin = -1
         dmin = typemax(Int64)

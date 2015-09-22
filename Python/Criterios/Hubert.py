@@ -49,10 +49,12 @@ class HubertGap:
         data_max = np.max(data,0)
         data_min = np.min(data,0)
         hubert = 0
-        for i in range(r):
+        for i in range(1):
             print(i)
             sample = self.random_sample(data_max,data_min,N,M)
+            print(sample)
             value = self.hubert(sample,kmeans)
+            print(value)
             print(value)
             hubert += np.log(value+1.000001)
         hubert_expectation=hubert/float(r)
