@@ -1,4 +1,6 @@
-push!(LOAD_PATH, dirname(@__FILE__))
+push!(LOAD_PATH,dirname(@__FILE__))
+push!(LOAD_PATH,joinpath(dirname(@__FILE__),"../../Datasets/"))
+push!(LOAD_PATH,joinpath(dirname(@__FILE__),"../../"))
 module AIC
 import Distributions
 import ClusterModelModule
