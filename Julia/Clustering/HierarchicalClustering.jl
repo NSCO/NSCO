@@ -1,12 +1,11 @@
-#using DataFrame
+push!(LOAD_PATH, dirname(@__FILE__))
 module HierarchicalClustering
+
+import ClusterModelModule
+cm = ClusterModelModule
 export single_linkage_configuration, build_model, HierarchicalConfiguration, euclidean_dist,
     complete_linkage_configuration, average_linkage_configuration, ward_linkage_configuration
 
-type ClusterModel
-    assignments :: Array{Int64,1}
-    centroids :: Array{Float64, 2}
-end
 type HierarchicalConfiguration
     metric::Function
     joining_criterion::Function
@@ -123,7 +122,7 @@ function build_model(data::Matrix, conf::HierarchicalConfiguration)
         splice!(clusters, jmin)
     end
     (centroids, assignments) = clusterListToAssignments(clusters, data)
-    clusterModel = ClusterModel(assignments, centroids)
+    clusterModel = cm.ClusterModel(assignments, centroids)
   return clusterModel
 end
 
