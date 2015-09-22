@@ -4,7 +4,7 @@ export build_model, pretty_print
 type TreeNode
     attributeName::AbstractString
     attributeIndex::Integer
-    childrens::Dict{Any,TreeNode}
+    children::Dict{Any,TreeNode}
     cutPoint::Float64
     className
 end
@@ -25,7 +25,7 @@ end
 
 
 function calculate_attribute_class_entropy(classes,classRange,indexesForAttr)
-    attrClassEntropy  =
+    attrClassEntropy  = 0
     nClasses = length(classRange)
     nB = sum(indexesForAttr)
     for c=1:length(classRange)
@@ -113,7 +113,7 @@ function create_node(D::Matrix, classes, conf::C45Config, depth)
        end
        treeNode =  TreeNode("", 0, Dict{Any,TreeNode}(), 0, conf.labelNames[indmax(countForClass)])
     else
-      #create an intern node with a child node per attr value
+      #create an internal node with a child node per attr value
       (entropyMin, selectedAttributeIndex, cutPoint) =  select_attribute(D, conf.attributeIsNumeric, classes)
       if (conf.attributeIsNumeric[selectedAttributeIndex])
           treeNode = TreeNode(conf.attributeNames[selectedAttributeIndex], selectedAttributeIndex, Dict{Any,TreeNode}(), cutPoint, "")
@@ -124,9 +124,9 @@ function create_node(D::Matrix, classes, conf::C45Config, depth)
           newDGreater              = D[:,filtered_indexes_greater]
           newClassesGreater        = classes'[filtered_indexes_greater]
           #True si el valor es menor igual al punto de corte
-          treeNode.childrens[ true ] = create_node(newDLess, newClassesLess, copy(conf), depth + 1)
+          treeNode.children[ true ] = create_node(newDLess, newClassesLess, copy(conf), depth + 1)
           #False si el valor es mayor al punto de corte
-          treeNode.childrens[ false ] = create_node(newDGreater, newClassesGreater, copy(conf), depth + 1)
+          treeNode.children[ false ] = create_node(newDGreater, newClassesGreater, copy(conf), depth + 1)
       else
           treeNode =TreeNode(conf.attributeNames[selectedAttributeIndex], selectedAttributeIndex, Dict{Any,TreeNode}(), 0, "")
           for attributeValue in cutPoint #cutPoint is attrRange
@@ -136,7 +136,7 @@ function create_node(D::Matrix, classes, conf::C45Config, depth)
               conf.attributeIsNumeric = conf.attributeIsNumeric[columnIndexes]
               newClasses            = classes'[attributeValueIdx]
               newD                  = D[columnIndexes, attributeValueIdx]
-              treeNode.childrens[ attributeValue ] = create_node(newD, newClasses, copy(conf), depth + 1)
+              treeNode.children[ attributeValue ] = create_node(newD, newClasses, copy(conf), depth + 1)
           end
       end
     end
@@ -155,20 +155,20 @@ function pretty_print(n, margin::Integer)
      if (n.cutPoint == 0) #nominal
        println(string(repeat(" " ,margin),"Attribute: ",n.attributeName))
        #for children in values(n.childrens)
-       for key in keys(n.childrens)
-         child = n.childrens[key]
+       for key in keys(n.children)
+         child = n.children[key]
          println(string(repeat(" " ,margin), "Branch: ", key))
          pretty_print(child, margin + 4)
        end
      else
        println(string(repeat(" " ,margin),"Attribute: ",n.attributeName))
        #for children in values(n.childrens)
-       for key in keys(n.childrens)
-         child = n.childrens[key]
+       for key in keys(n.children)
+         child = n.children[key]
          if key
-           println(string(repeat(" " ,margin), "Branch: <", n.cutPoint))
+           println(string(repeat(" " ,margin), "Branch: < ", n.cutPoint))
          else
-           println(string(repeat(" " ,margin), "Branch: >", n.cutPoint))
+           println(string(repeat(" " ,margin), "Branch: > ", n.cutPoint))
          end
          pretty_print(child, margin + 4)
        end

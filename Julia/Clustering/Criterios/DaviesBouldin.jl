@@ -22,7 +22,7 @@ function daviesbouldin(c::cm.ClusterModel, data::Matrix)
   #calculate cluster dispersion
   for i=1:nClusters
     sample = data[:, c.assignments .== i]
-    S[i] = sum(map(x -> distance(x, c.centroids[:,i]), sample))
+    S[i] = mean(map(x -> distance(x, c.centroids[:,i]), sample))
   end;
   #calculate inter-cluster distance and fill the R matrix
   for i=1:nClusters-1
