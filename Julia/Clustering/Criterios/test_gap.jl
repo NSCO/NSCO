@@ -1,12 +1,13 @@
 push!(LOAD_PATH,dirname(@__FILE__))
 push!(LOAD_PATH,joinpath(dirname(@__FILE__),"../../Datasets/"))
-push!(LOAD_PATH,joinpath(dirname(@__FILE__),"../../"))
+push!(LOAD_PATH,joinpath(dirname(@__FILE__),"../"))
 import Datasets
 import GAP
+import HierarchicalClustering
 using GAP
 using Datasets
 using PyPlot
-import HierarchicalClustering
+
 hc = HierarchicalClustering
 
 
