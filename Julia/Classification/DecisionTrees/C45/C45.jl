@@ -6,7 +6,9 @@ type TreeNode
     attributeIndex::Integer
     children::Dict{Any,TreeNode}
     cutPoint::Float64
-    className
+    labelName::AbstractString
+    label::Integer
+    nodeType::AbstractString
 end
 
 type C45Config
@@ -29,7 +31,7 @@ function calculate_attribute_class_entropy(classes,classRange,indexesForAttr)
     nClasses = length(classRange)
     nB = sum(indexesForAttr)
     for c=1:length(classRange)
-      #nBC es la cantidad de elementos que tienen el valor x en el attr y son de clase classRange(c)
+      #nBC es la cantidad de elementos que tienen el valor x en el attr y son de clase classRange[c]
       indexesForClass = (classes .== classRange[c]) & (indexesForAttr')
       nBC = sum(indexesForClass)
       if (nBC != 0)
@@ -111,12 +113,13 @@ function create_node(D::Matrix, classes, conf::C45Config, depth)
        for i=1:length(classRange)
            countForClass[i] = sum(classes .== classRange[i])
        end
-       treeNode =  TreeNode("", 0, Dict{Any,TreeNode}(), 0, conf.labelNames[indmax(countForClass)])
+       selectedIndex = indmax(countForClass)
+       treeNode =  TreeNode("", 0, Dict{Any,TreeNode}(), 0, conf.labelNames[selectedIndex], selectedIndex, "LEAF")
     else
       #create an internal node with a child node per attr value
       (entropyMin, selectedAttributeIndex, cutPoint) =  select_attribute(D, conf.attributeIsNumeric, classes)
       if (conf.attributeIsNumeric[selectedAttributeIndex])
-          treeNode = TreeNode(conf.attributeNames[selectedAttributeIndex], selectedAttributeIndex, Dict{Any,TreeNode}(), cutPoint, "")
+          treeNode = TreeNode(conf.attributeNames[selectedAttributeIndex], selectedAttributeIndex, Dict{Any,TreeNode}(), cutPoint, "", 0, "NUMERIC")
           filtered_indexes_less = D[selectedAttributeIndex,:] .<= cutPoint
           filtered_indexes_greater = !filtered_indexes_less
           newDLess                 = D[:,filtered_indexes_less]
@@ -128,7 +131,7 @@ function create_node(D::Matrix, classes, conf::C45Config, depth)
           #False si el valor es mayor al punto de corte
           treeNode.children[ false ] = create_node(newDGreater, newClassesGreater, copy(conf), depth + 1)
       else
-          treeNode =TreeNode(conf.attributeNames[selectedAttributeIndex], selectedAttributeIndex, Dict{Any,TreeNode}(), 0, "")
+          treeNode =TreeNode(conf.attributeNames[selectedAttributeIndex], selectedAttributeIndex, Dict{Any,TreeNode}(), 0, "", 0, "NOMINAL")
           for attributeValue in cutPoint #cutPoint is attrRange
               attributeValueIdx     = D[selectedAttributeIndex,:] .== attributeValue
               columnsIndexes        = 1:size(D,1) .!= selectedAttributeIndex
@@ -150,10 +153,12 @@ function build_model(D::Matrix, classes, conf::C45Config)
 end
 
 function pretty_print(n, margin::Integer)
-   if ( n.attributeIndex != 0) #not a leaf node
+   #if ( n.attributeIndex != 0) #not a leaf node
+   if (n.nodeType != "LEAF") #not a leaf node
      #TODO: distinguish between numeric and nominal in a better way
-     if (n.cutPoint == 0) #nominal
-       println(string(repeat(" " ,margin),"Attribute: ",n.attributeName))
+     #if (n.cutPoint == 0) #nominal
+     if (n.nodeType == "NOMINAL") #nominal
+       println(string(repeat(" " ,margin),"Attribute: ", n.attributeName))
        #for children in values(n.childrens)
        for key in keys(n.children)
          child = n.children[key]
@@ -161,27 +166,56 @@ function pretty_print(n, margin::Integer)
          pretty_print(child, margin + 4)
        end
      else
-       println(string(repeat(" " ,margin),"Attribute: ",n.attributeName))
+       println(string(repeat(" " ,margin),"Attribute: ", n.attributeName))
        #for children in values(n.childrens)
        for key in keys(n.children)
          child = n.children[key]
          if key
-           println(string(repeat(" " ,margin), "Branch: < ", n.cutPoint))
+           println(string(repeat(" " ,margin), "Branch: <= ", n.cutPoint))
          else
            println(string(repeat(" " ,margin), "Branch: > ", n.cutPoint))
          end
          pretty_print(child, margin + 4)
        end
      end
-
-  else
-       println(string(repeat(" " ,margin),"Class: ",n.className))
+  else #a leaf node
+       println(string(repeat(" " ,margin),"Class: ",n.labelName))
   end
-
 end
 
 function pretty_print(n)
     pretty_print(n,0)
+end
+
+function classify(example, tree::TreeNode, conf::C45Config)
+  if tree.nodeType == "LEAF"
+    return tree.label
+  else
+    attrIndex = find(conf.attributeNames .== tree.attributeName)
+    attrIndex = attrIndex[1]
+    if tree.nodeType == "NOMINAL"
+      if haskey(tree.children, example[attrIndex])
+        child = tree.children[example[attrIndex]]
+        return classify(example, child, conf)
+      else
+        return 0 #value not found, output unknown prediction
+      end
+    else
+      #numeric attribute
+      goLeft = example[attrIndex] <= tree.cutPoint
+      child = tree.children[goLeft]
+      return classify(example, child, conf)
+    end
+  end
+end
+
+function classify(data::Matrix, model::TreeNode, conf::C45Config)
+  (nAttrs, nExamples) = size(data)
+  predictions = zeros(nExamples)
+  for i=1:nExamples
+    predictions[i] = classify(data[:,i], model, conf)
+  end
+  return predictions
 end
 
 end
