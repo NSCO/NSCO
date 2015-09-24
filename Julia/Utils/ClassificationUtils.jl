@@ -2,13 +2,13 @@ module ClassificationUtils
 
 function confusionmatrix(real, pred)
   real_range = unique(real)
-  pred_range = unique(pred)
-  conf_matrix = zeros(length(pred_range) + 1, length(real_range) + 1)
+  conf_matrix = zeros(length(real_range) + 2, length(real_range) + 1)
   #count hits and misses
-  for i = 1:length(pred_range)
+  for i = 1:length(real_range)
     for j = 1:length(real_range)
-      conf_matrix[i,j] = sum((pred .== pred_range[i]) & (real .== real_range[j]))
+      conf_matrix[i,j] = sum((pred .== real_range[i]) & (real .== real_range[j]))
     end
+    conf_matrix[length(real_range) + 1, i] = sum((pred .== 0) & (real .== real_range[i]))
   end
   #class precision, recall and accuracy
   for i = 1:length(real_range)
@@ -20,7 +20,7 @@ function confusionmatrix(real, pred)
     conf_matrix[end, end] += conf_matrix[i,i]
   end
   #normalize accuracy
-  conf_matrix[end, end] /= length(real)  
+  conf_matrix[end, end] /= length(real)
   return conf_matrix
 end
 
