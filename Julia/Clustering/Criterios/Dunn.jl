@@ -14,7 +14,7 @@ function clusters_dissimilarity(cl1::Matrix,cl2::Matrix)
   end
   return minDist
 end
-function cluster_diamater(D::Matrix)
+function cluster_diameter(D::Matrix)
   (nAttributes,nPatterns) =size(D)
   maxDistance = -1
   for i=1:nPatterns-1
@@ -30,9 +30,9 @@ end
 function max_diameter(D::Matrix, assignments::Array)
   (nAttributes,nPatterns) =size(D)
   unique_labels = unique(assignments)
-  maxDiameter = typemin(Float64)
-  for label in length(unique_labels)
-    diameter = cluster_diamater(D[:,assignments.==label])
+  maxDiameter = -1
+  for label in unique_labels
+    diameter = cluster_diameter(D[:,assignments.==label])
     if (maxDiameter <  diameter)
       maxDiameter = diameter
     end
@@ -44,7 +44,7 @@ function dunn(D::Matrix, assignments::Array)
     unique_labels = unique(assignments)
     maxDiameter = max_diameter(D,assignments)
 
-    minDunnIndex = typemax(Float64)
+    minDunnIndex =typemax(Float64)
     for i=1:length(unique_labels)-1
        for j=i+1:length(unique_labels)
            cluster1 = D[:,assignments.==unique_labels[i]]
