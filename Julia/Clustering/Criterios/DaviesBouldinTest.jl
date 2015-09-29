@@ -1,7 +1,8 @@
 push!(LOAD_PATH,dirname(@__FILE__))
 push!(LOAD_PATH,joinpath(dirname(@__FILE__),"../../Datasets/"))
 push!(LOAD_PATH,joinpath(dirname(@__FILE__),"../"))
-using Autoreload
+#using Autoreload
+using PyPlot
 
 import DaviesBouldin
 db = DaviesBouldin
@@ -25,3 +26,4 @@ for k=1:maxK
   scores[k] = db.daviesbouldin(clusterModel, data)
 end
 println(scores)
+plot(scores)
