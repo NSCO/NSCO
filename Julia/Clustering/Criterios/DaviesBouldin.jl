@@ -7,7 +7,8 @@ cm = ClusterModelModule
 export daviesbouldin
 
 function distance(x,y)
-  return sqrt(sum((x - y).^2))
+  #return sqrt(sum((x - y).^2))
+  return norm(x-y)
 end
 
 function daviesbouldin(c::cm.ClusterModel, data::Matrix)
@@ -22,7 +23,11 @@ function daviesbouldin(c::cm.ClusterModel, data::Matrix)
   #calculate cluster dispersion
   for i=1:nClusters
     sample = data[:, c.assignments .== i]
-    S[i] = mean(map(x -> distance(x, c.centroids[:,i]), sample))
+    for j=1:size(sample,2)
+      S[i] = S[i] + distance(sample[:,j],c.centroids[:,i])
+    end
+   S[i] = S[i] /size(sample,2)
+
   end;
   #calculate inter-cluster distance and fill the R matrix
   for i=1:nClusters-1
@@ -33,7 +38,7 @@ function daviesbouldin(c::cm.ClusterModel, data::Matrix)
         else
           R[i,j] = 0 #the similarity of the cluster with itself will not be taken into account
         end
-      R[j,i] = R[i,j] # the R matrix is symmetric
+        R[j,i] = R[i,j] # the R matrix is symmetric
     end
   end
   #the DB index is the average of the highest similarities for each cluster

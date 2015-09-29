@@ -10,8 +10,8 @@ import HierarchicalClustering
 
 hc = HierarchicalClustering
 
-data=Datasets.skinpoints()
-data=data[:,1:100:end]
+(data,labels)=Datasets.iris()
+#data=data[:,1:100:end]
 mins = minimum(data, 2)
 maxs = maximum(data, 2)
 #data = data ./ maximum(data, 2)
