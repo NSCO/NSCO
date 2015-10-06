@@ -217,5 +217,12 @@ function classify(data::Matrix, model::TreeNode, conf::C45Config)
   end
   return predictions
 end
+function error_estimation()
 
+  num1=f+((z^2)/(2*N))
+  num2=(f/N) - ((f*f)/N)+ (z*z)/(4*(N^2))
+  numerador = num1+z*sqrt(num2)
+  denominador = 1 + (z*z)/N
+  return numerador/denominador
+end
 end
