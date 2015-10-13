@@ -13,7 +13,8 @@ cu = ClassificationUtils
 (data, labels, labelNames) = Datasets.iris()
 attributeIsNumeric = collect(repeated(true,size(data,1)))
 attrNames = ["Sepal-Length", "Sepal-Width", "Petal-Length","Petal-Width"]
-conf = C45.C45Config(2, 20, attributeIsNumeric, attrNames, labelNames)
+confidenceLevel = 0.1
+conf = C45.C45Config(2, 20, attributeIsNumeric, attrNames, labelNames, confidenceLevel)
 model = C45.build_model(data, labels, conf)
 C45.pretty_print(model)
 

@@ -23,7 +23,7 @@ function classification_error(label_hist::Array{Int,1}, c::Float64)
   return (error_proportion, error_upper_bound(errors, sample_size, c))
 end
 
-function compare_parent_and_children(parent::Array{Int,1}, children::Array{Array{Int,1}}, c::Float64)
+function compare_parent_and_children(parent::Array{Int,1}, children::Array{Array{Int,1},1}, c::Float64)
   #parent and all children are lists with the quantities of elements for each label
   #all list measure the same
   #it is assumed that the sum of all children are equal to the parent.
