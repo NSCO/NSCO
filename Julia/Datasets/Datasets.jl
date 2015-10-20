@@ -8,6 +8,22 @@ function skinpoints()
   x'
 end
 
+function hill_valley_train()
+    data = readtable(joinpath(dirname(@__FILE__),"Hill_Valley_with_noise_Training.data"),separator=',',header=true)
+    data = convert(Matrix,data)
+    y_labels=round(Int,data[:,end])
+    data =   data[:,1:end-1]
+    return (data',vec(y_labels+1))
+end
+
+function hill_valley_test()
+    data = readtable(joinpath(dirname(@__FILE__),"Hill_Valley_with_noise_Testing.data"),separator=',',header=true)
+    data = convert(Matrix,data)
+    y_labels=round(Int,data[:,end])
+    data =   data[:,1:end-1]
+    return (data',vec(y_labels+1))
+end
+
 function iris()
   #data=readtable("Iris.csv",separator=';',header=true)
   data=readtable(joinpath(dirname(@__FILE__),"Iris.csv"),separator=';',header=true)

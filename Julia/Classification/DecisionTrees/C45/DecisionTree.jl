@@ -24,11 +24,15 @@ type InternalNumericTreeNode <:AbstractTreeNode
     cutPoint::Float64
     countForClass::Array{Int,1}
 end
+
 abstract AttributeSelectionMethod
+
 type RandomAttributeSelection <: AttributeSelectionMethod
+  attributeProportion::Float64
 end
-type C45AttributeSelection <: AttributeSelectionMethod
-end
+
+type C45AttributeSelection <: AttributeSelectionMethod end
+
 type Config
     minLeafNodeSize::Integer
     maximalDepth::Integer
@@ -114,6 +118,24 @@ function select_attribute(D::Matrix, attributeIsNumeric::Array{Bool,1}, classes,
     attrEntropy = zeros(nAttributes)
     cutPoints   = Array{Any,1}(nAttributes)
     for i=1:nAttributes
+      if (attributeIsNumeric[i])
+          (attrEntropy[i],cutPoints[i]) = calculate_numeric_attribute_entropy(D,i,classes)
+      else
+          (attrEntropy[i],cutPoints[i]) = calculate_nominal_attribute_entropy(D,i,classes)
+      end
+    end
+    (entropyMin,indexMin) = findmin(attrEntropy)
+    return (entropyMin,indexMin,cutPoints[indexMin])
+end
+
+function select_attribute(D::Matrix, attributeIsNumeric::Array{Bool,1}, classes, conf::RandomAttributeSelection)
+    (nAttributes,nPatterns) = size(D)
+    classRange  = sort(unique(classes))
+    nClasses    = length(classRange)
+    attrEntropy = ones(nAttributes)*typemax(Float64)
+    cutPoints   = Array{Any,1}(nAttributes)
+    randomAttributes = Distributions.sample(1:nAttributes,round(Int,conf.attributeProportion*nAttributes),replace=false)
+    for i in randomAttributes
       if (attributeIsNumeric[i])
           (attrEntropy[i],cutPoints[i]) = calculate_numeric_attribute_entropy(D,i,classes)
       else
