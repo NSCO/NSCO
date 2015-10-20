@@ -1,4 +1,5 @@
 module ClassificationUtils
+export confusionmatrix
 
 function confusionmatrix(real, pred)
   real_range = unique(real)

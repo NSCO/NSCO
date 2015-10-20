@@ -1,4 +1,5 @@
-module C45
+module DecisionTree
+using Distributions
 export build_model, pretty_print
 
 abstract AbstractTreeNode
@@ -13,6 +14,7 @@ type InternalNominalTreeNode <:  AbstractTreeNode
     attributeName::AbstractString
     attributeIndex::Integer
     children::Dict{Any, AbstractTreeNode}
+    countForClass::Array{Int,1}
 end
 
 type InternalNumericTreeNode <:AbstractTreeNode
@@ -20,23 +22,34 @@ type InternalNumericTreeNode <:AbstractTreeNode
     attributeIndex::Integer
     children::Dict{Any, AbstractTreeNode}
     cutPoint::Float64
+    countForClass::Array{Int,1}
 end
-
-type C45Config
+abstract AttributeSelectionMethod
+type RandomAttributeSelection <: AttributeSelectionMethod
+end
+type C45AttributeSelection <: AttributeSelectionMethod
+end
+type Config
     minLeafNodeSize::Integer
     maximalDepth::Integer
     attributeIsNumeric:: Array{Bool, 1}
     attributeNames:: Array{AbstractString, 1}
     labelNames:: Array{AbstractString, 1}
-    confidenceLevel::Float32
+    confidenceLevel::Float64
+    attributeSelection::AttributeSelectionMethod
 end
 
-function copy(conf::C45Config)
-  return C45Config(conf.minLeafNodeSize, conf.maximalDepth,
+type Model
+  tree::AbstractTreeNode
+  conf::Config
+end
+
+#=function copy(conf::Config)
+  return Config(conf.minLeafNodeSize, conf.maximalDepth,
     Base.copy(conf.attributeIsNumeric), Base.copy(conf.attributeNames),
     Base.copy(conf.labelNames),
     conf.confidenceLevel)
-end
+end=#
 
 
 function calculate_attribute_class_entropy(classes,classRange,indexesForAttr)
@@ -94,7 +107,7 @@ function calculate_nominal_attribute_entropy(D::Matrix,i,classes)
   return (attrEntropy, attrRange)
 end
 
-function select_attribute(D::Matrix, attributeIsNumeric::Array{Bool,1}, classes)
+function select_attribute(D::Matrix, attributeIsNumeric::Array{Bool,1}, classes, conf::C45AttributeSelection)
     (nAttributes,nPatterns) = size(D)
     classRange  = sort(unique(classes))
     nClasses    = length(classRange)
@@ -116,25 +129,26 @@ function stopping_condition_met(D, classes, conf, depth)
          (depth == conf.maximalDepth)
 end
 
-function create_node(D::Matrix, classes, conf::C45Config, depth)
-    #if (size(D,2) < conf.minLeafNodeSize) || (length(unique(classes)) <= 1)
+function get_label_histogram(labelNames::Vector{AbstractString}, classes)
+  classRange = 1:length(labelNames)
+  countForClass = zeros(length(classRange))
+  for i=1:length(classRange)
+      countForClass[i] = sum(classes .== classRange[i])
+  end
+  return countForClass
+end
+
+function create_node(D::Matrix, classes, conf::Config, depth)
+    countForClass = get_label_histogram(conf.labelNames, classes)
     if (stopping_condition_met(D, classes, conf, depth))
        #create a leaf node
-       #classRange = unique(classes)
-       classRange = 1:length(conf.labelNames)
-       countForClass = zeros(length(classRange))
-       for i=1:length(classRange)
-           countForClass[i] = sum(classes .== classRange[i])
-       end
        selectedIndex = indmax(countForClass)
-       #treeNode =  TreeNode("", 0, Dict{Any,TreeNode}(), 0, conf.labelNames[selectedIndex], selectedIndex, "LEAF")
        treeNode =  LeafTreeNode(conf.labelNames[selectedIndex], selectedIndex, countForClass)
     else
       #create an internal node with a child node per attr value
-      (entropyMin, selectedAttributeIndex, cutPoint) =  select_attribute(D, conf.attributeIsNumeric, classes)
+      (entropyMin, selectedAttributeIndex, cutPoint) =  select_attribute(D, conf.attributeIsNumeric, classes,conf.attributeSelection)
       if (conf.attributeIsNumeric[selectedAttributeIndex])
-          #treeNode = TreeNode(conf.attributeNames[selectedAttributeIndex], selectedAttributeIndex, Dict{Any,TreeNode}(), cutPoint, "", 0, "NUMERIC")
-          treeNode = InternalNumericTreeNode(conf.attributeNames[selectedAttributeIndex], selectedAttributeIndex, Dict{Any,AbstractTreeNode}(), cutPoint)
+          treeNode = InternalNumericTreeNode(conf.attributeNames[selectedAttributeIndex], selectedAttributeIndex, Dict{Any,AbstractTreeNode}(), cutPoint, countForClass)
           filtered_indexes_less = D[selectedAttributeIndex,:] .<= cutPoint
           filtered_indexes_greater = !filtered_indexes_less
           newDLess                 = D[:,filtered_indexes_less]
@@ -142,11 +156,11 @@ function create_node(D::Matrix, classes, conf::C45Config, depth)
           newDGreater              = D[:,filtered_indexes_greater]
           newClassesGreater        = classes'[filtered_indexes_greater]
           #True si el valor es menor igual al punto de corte
-          treeNode.children[ true ] = create_node(newDLess, newClassesLess, copy(conf), depth + 1)
+          treeNode.children[ true ] = create_node(newDLess, newClassesLess, deepcopy(conf), depth + 1)
           #False si el valor es mayor al punto de corte
-          treeNode.children[ false ] = create_node(newDGreater, newClassesGreater, copy(conf), depth + 1)
+          treeNode.children[ false ] = create_node(newDGreater, newClassesGreater, deepcopy(conf), depth + 1)
       else
-          treeNode = InternalNominalTreeNode(conf.attributeNames[selectedAttributeIndex], selectedAttributeIndex, Dict{Any,AbstractTreeNode}())
+          treeNode = InternalNominalTreeNode(conf.attributeNames[selectedAttributeIndex], selectedAttributeIndex, Dict{Any,AbstractTreeNode}(), countForClass)
           for attributeValue in cutPoint #cutPoint is attrRange
               attributeValueIdx     = D[selectedAttributeIndex,:] .== attributeValue
               columnsIndexes        = 1:size(D,1) .!= selectedAttributeIndex
@@ -154,22 +168,23 @@ function create_node(D::Matrix, classes, conf::C45Config, depth)
               conf.attributeIsNumeric = conf.attributeIsNumeric[columnIndexes]
               newClasses            = classes'[attributeValueIdx]
               newD                  = D[columnIndexes, attributeValueIdx]
-              treeNode.children[ attributeValue ] = create_node(newD, newClasses, copy(conf), depth + 1)
-          end
-          childrenHistograms = [ node.countForClass for node in treeNode.children]
-          (errorParent, errorChild) = compare_parent_and_children(treeNode.countForClass,childrenHistograms,conf.confidenceLevel)
-          if (errorParent < errorChild)
-                selectedIndex = indmax(treeNode.countForClass)
-                treeNode = LeafTreeNode(conf.labelNames[selectedIndex], selectedIndex, treeNode.countForClass)
-          end
+              treeNode.children[ attributeValue ] = create_node(newD, newClasses, deepcopy(conf), depth + 1)
+          end #is nominal
+      end # is not leaf
+      childrenHistograms = [ node.countForClass::Vector{Int} for node in values(treeNode.children)]
+      (errorParent, errorChild) = compare_parent_and_children(treeNode.countForClass,childrenHistograms,conf.confidenceLevel)
+      if (errorParent < errorChild)
+        selectedIndex = indmax(treeNode.countForClass)
+        treeNode = LeafTreeNode(conf.labelNames[selectedIndex], selectedIndex, treeNode.countForClass)
       end
     end
     return treeNode
 end
-function build_model(D::Matrix, classes, conf::C45Config)
+
+function build_model(D::Matrix, classes, conf::Config)
    depth = 0
-   node =  create_node(D, classes, copy(conf), depth)
-   return node
+   node =  create_node(D, classes, deepcopy(conf), depth)
+   return Model(node, conf)
 end
 
 function pretty_print(n::LeafTreeNode,margin::Integer)
@@ -178,7 +193,6 @@ end
 
 function pretty_print(n::InternalNumericTreeNode,margin::Integer)
     println(string(repeat(" " ,margin),"Attribute: ", n.attributeName))
-   #for children in values(n.childrens)
    for key in keys(n.children)
      child = n.children[key]
      if key
@@ -208,11 +222,11 @@ function pretty_print(n)
 end
 
 
-function classify_example(example, tree::LeafTreeNode, conf::C45Config)
+function classify_example(example, tree::LeafTreeNode, conf::Config)
     return tree.label
 end
 
-function classify_example(example, tree::InternalNumericTreeNode, conf::C45Config)
+function classify_example(example, tree::InternalNumericTreeNode, conf::Config)
     attrIndex = find(conf.attributeNames .== tree.attributeName)
     attrIndex = attrIndex[1]
     goLeft = example[attrIndex] <= tree.cutPoint
@@ -220,7 +234,11 @@ function classify_example(example, tree::InternalNumericTreeNode, conf::C45Confi
     return classify_example(example, child, conf)
 end
 
-function classify_example(example, tree::InternalNominalTreeNode, conf::C45Config)
+function classify_example(example, m::Model)
+  return classify_example(example, m.tree, m.conf)
+end
+
+function classify_example(example, tree::InternalNominalTreeNode, conf::Config)
     attrIndex = find(conf.attributeNames .== tree.attributeName)
     attrIndex = attrIndex[1]
     if haskey(tree.children, example[attrIndex])
@@ -231,11 +249,11 @@ function classify_example(example, tree::InternalNominalTreeNode, conf::C45Confi
     end
 end
 
-function classify(data::Matrix, model::AbstractTreeNode, conf::C45Config)
+function classify(data::Matrix, model::Model)
   (nAttrs, nExamples) = size(data)
-  predictions = zeros(nExamples)
+  predictions = zeros(Int, nExamples)
   for i=1:nExamples
-    predictions[i] = classify_example(data[:,i], model, conf)
+    predictions[i] = classify_example(data[:,i], model)
   end
   return predictions
 end
@@ -258,8 +276,6 @@ function error_upper_bound(e::Integer, n::Integer, c::Float64)
   # P (x > z) = c
   f = e/n
   z = (quantile(Normal(), 1-c))
-  #println(string("f=", f))
-  #println(string("z=", z))
   return (f + (z*z / 2n) + z * sqrt(f*(1-f)/n + z*z/(4n*n))) / (z*z/n + 1)
 end
 
@@ -282,12 +298,22 @@ function compare_parent_and_children(parent::Array{Int,1}, children::Vector{Vect
     child = children[i]
     (error, estimate) = classification_error(child, c)
     children_error[i] = estimate
-    #println(string("estimate=", estimate))
-    #println(string("sum(child)=", sum(child)))
     partition_error += (sum(child)) * children_error[i]
   end
   partition_error /= sum(parent)
   (parent_error_estimate, partition_error)
+end
+
+function treeSize(treeNode::LeafTreeNode)
+  return 1
+end
+
+function treeSize(treeNode::AbstractTreeNode)
+    suma = 1
+    for (key, child) in treeNode.children
+        suma = suma + treeSize(child)
+    end
+    return suma
 end
 
 end

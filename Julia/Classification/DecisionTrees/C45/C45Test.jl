@@ -3,33 +3,32 @@ push!(LOAD_PATH,joinpath(dirname(@__FILE__),"../../../Datasets/"))
 push!(LOAD_PATH, joinpath(dirname(@__FILE__),"../../../Utils"))
 push!(LOAD_PATH,joinpath(dirname(@__FILE__),"../../"))
 
-import Datasets
+
 using Datasets
-import C45
-using C45
+using DecisionTree
 import ClassificationUtils
 cu = ClassificationUtils
 
 (data, labels, labelNames) = Datasets.iris()
 attributeIsNumeric = collect(repeated(true,size(data,1)))
 attrNames = ["Sepal-Length", "Sepal-Width", "Petal-Length","Petal-Width"]
-confidenceLevel = 0.9
-conf = C45.C45Config(2, 20, attributeIsNumeric, attrNames, labelNames, confidenceLevel)
-#model = C45.build_model(data, labels, conf)
-#C45.pretty_print(model)
+confidenceLevel = 0.5
+conf = DecisionTree.Config(2, 20, attributeIsNumeric, attrNames, labelNames, confidenceLevel, DecisionTree.C45AttributeSelection())
+model = DecisionTree.build_model(data, labels, conf)
+DecisionTree.pretty_print(model.tree)
 
-#predictions = C45.classify(data, model, conf)
-#=
+predictions = DecisionTree.classify(data, model)
+
 conf_matrix = cu.confusionmatrix(labels, predictions)
 println(conf_matrix)
-
+#=
 range = 0.05:0.05:0.9
 sizes = zeros(length(range))
 for i = 1:length(range)
   println("Building tree with confidence $(range[i])")
   conf = C45.C45Config(2, 20, attributeIsNumeric, attrNames, labelNames, range[i])
   model = C45.build_model(data, labels, conf)
-  sizes[i] = C45.treeSize(model)
+  sizes[i] = C45.treeSize(model.tree)
 end
 using PyPlot
 plot(range, sizes)
@@ -49,7 +48,7 @@ c = 0.05:0.01:0.9
 parent_errors=[]
 children_errors=[]
 for x in c
-  ep,ec = C45.compare_parent_and_children(parent,children,x)
+  ep,ec = DecisionTree.compare_parent_and_children(parent,children,x)
   push!(children_errors,ec)
   push!(parent_errors,ep)
 end
