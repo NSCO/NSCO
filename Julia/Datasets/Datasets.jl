@@ -110,16 +110,17 @@ function make_gaussian_blobs(samples::Int,centers::Array{Float64,2},sigma::Float
   end
   features,k=size(centers)
   cov=sigma*eye(features)
-  data=zeros(features,k*samples)
+  x=zeros(features,k*samples)
   for i in 1:k
       var = Distributions.MvNormal(centers[:,i],cov)
-      data[:, (i-1)*samples+1:i*samples] = rand(var,samples)
+      x[:, (i-1)*samples+1:i*samples] = rand(var,samples)
   end
 
-  shuffled_order=shuffle(collect(1:size(data,2)))
-  data[:,1:end]=data[:,shuffled_order]
-
-  return data
+  shuffled_order=shuffle(collect(1:size(x,2)))
+  x[:,1:end]=x[:,shuffled_order]
+  row_sum = maximum(x,2)
+  x    = x ./ row_sum
+  return x
 end
 
 end
