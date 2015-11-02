@@ -1,6 +1,7 @@
-module Datasets 
+module Datasets
 
 using DataFrames
+using Distributions
 
 function skinpoints()
   data=readtable(joinpath(dirname(@__FILE__),"skin_points.csv"),separator=',',header=false)
